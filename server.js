@@ -16,8 +16,10 @@ const ID_FILE_PATH = path.join(__dirname, "latest_id.txt");
 app.get("/api/test", (req, res) => {
   try {
     if (fs.existsSync(ID_FILE_PATH)) {
-      const uniqueId = fs.readFileSync(ID_FILE_PATH, "utf8");
-      res.status(200).json({ id: uniqueId });
+      const fileContent = fs.readFileSync(ID_FILE_PATH, "utf8");
+      const data = JSON.parse(fileContent);
+      console.log(data);
+      res.status(200).json(data);
     } else {
       res.status(404).json({ error: "No ID found." });
     }

@@ -7,7 +7,11 @@ module.exports = {
     .setDescription("Get information about the commands"),
   async execute(client, interaction) {
     let commands = null;
-    commands = "**/help** - Get information about the commands\n\n";
+    commands = "**/help** - Get information about the commands\n";
+    commands += "**/stream-text** - Send text to display on the stream\n";
+    commands += "**/stream-media** - Send media to display on the stream\n";
+    commands +=
+      "**/stream-mediatext** - Send text and media to display on the stream\n";
 
     const embed = new EmbedBuilder()
       .setTitle("List of available commands")

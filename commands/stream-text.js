@@ -69,7 +69,13 @@ function processTextQueue() {
           ],
         });
 
-        fs.writeFileSync(ID_FILE_PATH, text + "?text");
+        const data = {
+          type: "text",
+          content: text,
+          duration: duration,
+        };
+
+        fs.writeFileSync(ID_FILE_PATH, JSON.stringify(data));
 
         setTimeout(() => {
           try {

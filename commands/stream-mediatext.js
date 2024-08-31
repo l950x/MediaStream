@@ -99,7 +99,7 @@ async function processQueue() {
             text
           );
         } else if (fileExtension === ".mp4") {
-          await displayVideo(filePath, interaction, uniqueId);
+          await displayVideo(filePath, interaction, uniqueId, text);
         }
       } else {
         await interaction.editReply({
@@ -130,7 +130,15 @@ function displayImage(
   text
 ) {
   return new Promise((resolve) => {
-    fs.writeFileSync(ID_FILE_PATH, uniqueId + "?both=" + text + fileExtension);
+
+    const data = {
+      type: "image-text",
+      content: text,
+      image: "latest_media_" + uniqueId + fileExtension,
+      duration: duration,
+    };
+
+    fs.writeFileSync(ID_FILE_PATH, JSON.stringify(data));
 
     setTimeout(() => {
       try {
@@ -145,7 +153,7 @@ function displayImage(
   });
 }
 
-function displayVideo(filePath, interaction, uniqueId) {
+function displayVideo(filePath, interaction, uniqueId, text) {
   return new Promise((resolve) => {
     ffmpeg.ffprobe(filePath, (err, metadata) => {
       if (err) {
@@ -155,7 +163,14 @@ function displayVideo(filePath, interaction, uniqueId) {
       }
       const videoDuration = metadata.format.duration;
 
-      fs.writeFileSync(ID_FILE_PATH, uniqueId + "?vid=" + videoDuration);
+      const data = {
+        type: "image-video",
+        content: text,
+        videoLink: "latest_media_" + uniqueId + ".mp4",
+        duration: videoDuration,
+      };
+
+      fs.writeFileSync(ID_FILE_PATH, JSON.stringify(data));
 
       setTimeout(() => {
         try {

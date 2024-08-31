@@ -50,11 +50,11 @@ p {
 }
 @keyframes grrpaw-out {
   from {
-    transform: translateY(100px);
+    transform: translateY(0px);
     opacity: 1;
   }
   to {
-    transform: translateY(0px);
+    transform: translateY(-100px);
     opacity: 0;
   }
 }

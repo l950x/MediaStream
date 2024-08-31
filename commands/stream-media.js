@@ -121,7 +121,15 @@ function displayImage(
   uniqueId
 ) {
   return new Promise((resolve) => {
-    fs.writeFileSync(ID_FILE_PATH, uniqueId + "?" + fileExtension);
+
+    const data = {
+      type: "image",
+      image: "latest_media_" + uniqueId + fileExtension,
+      duration: duration,
+    };
+
+    fs.writeFileSync(ID_FILE_PATH, JSON.stringify(data));
+
     setTimeout(() => {
       try {
         fs.unlinkSync(filePath);
@@ -145,7 +153,13 @@ function displayVideo(filePath, interaction, uniqueId) {
       }
       const videoDuration = metadata.format.duration + 1;
 
-      fs.writeFileSync(ID_FILE_PATH, uniqueId + "?vid=" + videoDuration);
+      const data = {
+        type: "video",
+        content: "latest_media_" + uniqueId + ".mp4",
+        duration: videoDuration,
+      };
+
+      fs.writeFileSync(ID_FILE_PATH, JSON.stringify(data));
 
       setTimeout(() => {
         try {
