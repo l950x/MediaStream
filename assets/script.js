@@ -3,8 +3,13 @@ const video = document.getElementById("video");
 const img = document.getElementById("img");
 const text = document.getElementById("text");
 let mediaFetched = false;
+let isFetching = false;
 
 async function fetchMedia() {
+  if (isFetching || mediaFetched) return;
+
+  isFetching = true;
+
   try {
     const response = await fetch("http://localhost:3000/api/test");
     if (response.ok) {
@@ -24,6 +29,8 @@ async function fetchMedia() {
     }
   } catch (error) {
     console.error("Error fetching media:", error);
+  } finally {
+    isFetching = false;
   }
 }
 
@@ -125,13 +132,7 @@ function displayImageVideo(content, videoLink, durationInMs) {
 }
 
 function startFetching() {
-  const interval = setInterval(() => {
-    if (mediaFetched) {
-      clearInterval(interval);
-    } else {
-      fetchMedia();
-    }
-  }, 1000);
+  fetchMedia();
 }
 
 startFetching();

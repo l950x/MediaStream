@@ -1,5 +1,12 @@
 const { SlashCommandBuilder } = require("@discordjs/builders");
-const { AttachmentBuilder } = require("discord.js");
+const {
+  AttachmentBuilder,
+  EmbedBuilder,
+  ButtonBuilder,
+  ActionRowBuilder,
+  ButtonStyle,
+  ComponentType,
+} = require("discord.js");
 const path = require("path");
 const fs = require("fs");
 const fetch = require("node-fetch");
@@ -11,6 +18,7 @@ ffmpeg.setFfmpegPath(
 );
 
 const ID_FILE_PATH = path.join(__dirname, "../latest_id.txt");
+const CHANNEL_ID = "1147116498079461466";
 
 let interactionQueue = [];
 let isProcessing = false;
@@ -49,12 +57,13 @@ module.exports = {
     });
 
     if (!isProcessing) {
-      processQueue();
+      processQueue(client);
     }
   },
 };
 
-async function processQueue() {
+async function processQueue(client) {
+  if (isProcessing) return;
   isProcessing = true;
 
   while (interactionQueue.length > 0) {
@@ -77,36 +86,114 @@ async function processQueue() {
         const buffer = await response.buffer();
         fs.writeFileSync(filePath, buffer);
 
-        await interaction.editReply({
-          content: `Media received with ID: ${uniqueId} and will be displayed for ${duration} seconds on Streamlabs!`,
+        const embed = new EmbedBuilder()
+          .setTitle("Media Validation")
+          .setDescription(
+            `Please approve or reject the media to be displayed for ${duration} seconds.`
+          )
+          .setColor(0x00ff00)
+          .setImage(`attachment://latest_media_${uniqueId}${fileExtension}`);
+
+        const approveButton = new ButtonBuilder()
+          .setCustomId(`approve_${uniqueId}`)
+          .setLabel("Approve")
+          .setStyle(ButtonStyle.Success);
+
+        const rejectButton = new ButtonBuilder()
+          .setCustomId(`reject_${uniqueId}`)
+          .setLabel("Reject")
+          .setStyle(ButtonStyle.Danger);
+
+        const row = new ActionRowBuilder().addComponents(
+          approveButton,
+          rejectButton
+        );
+
+        const channel = await client.channels.fetch(CHANNEL_ID);
+
+        const message = await channel.send({
+          content: "Media received. Please approve or reject.",
+          embeds: [embed],
+          components: [row],
           files: [new AttachmentBuilder(filePath)],
         });
 
-        if ([".png", ".jpg", ".jpeg"].includes(fileExtension)) {
-          await displayImage(
-            filePath,
-            duration,
-            interaction,
-            fileExtension,
-            uniqueId
-          );
-        } else if (fileExtension === ".mp4") {
-          await displayVideo(filePath, interaction, uniqueId);
-        }
+        const filter = (i) =>
+          i.customId === `approve_${uniqueId}` ||
+          i.customId === `reject_${uniqueId}`;
+
+        const collector = message.createMessageComponentCollector({
+          componentType: ComponentType.Button,
+          filter,
+          time: 30000,
+        });
+
+        collector.on("collect", async (i) => {
+          if (i.user.id === interaction.user.id) {
+            if (i.customId === `approve_${uniqueId}`) {
+              await i.update({
+                content: "Media approved! It will now be processed.",
+                components: [],
+              });
+
+              if ([".png", ".jpg", ".jpeg"].includes(fileExtension)) {
+                await displayImage(
+                  filePath,
+                  duration,
+                  interaction,
+                  fileExtension,
+                  uniqueId
+                );
+              } else if (fileExtension === ".mp4") {
+                await displayVideo(filePath, interaction, uniqueId);
+              }
+            } else if (i.customId === `reject_${uniqueId}`) {
+              await i.update({
+                content: "Media rejected and will not be processed.",
+                components: [],
+              });
+              fs.unlinkSync(filePath);
+            }
+
+            collector.stop();
+          } else {
+            await i.reply({
+              content: "These buttons aren't for you!",
+              ephemeral: true,
+            });
+          }
+        });
+
+        collector.on("end", async (collected, reason) => {
+          if (reason === "time") {
+            await interaction.editReply({
+              content: "Validation timed out.",
+              components: [],
+            });
+            if (fs.existsSync(filePath)) {
+              fs.unlinkSync(filePath);
+            }
+          }
+
+          isProcessing = false;
+          processQueue(client);
+        });
       } else {
         await interaction.editReply({
           content: "Please provide media to send.",
           ephemeral: true,
         });
+        isProcessing = false;
+        processQueue(client);
       }
     } catch (error) {
       console.error("Error processing interaction:", error);
-      if (!interaction.replied && !interaction.deferred) {
-        await interaction.editReply({
-          content: "There was an error processing the media. Please try again.",
-          ephemeral: true,
-        });
-      }
+      await interaction.editReply({
+        content: "There was an error processing the media. Please try again.",
+        ephemeral: true,
+      });
+      isProcessing = false;
+      processQueue(client);
     }
   }
 
@@ -121,7 +208,6 @@ function displayImage(
   uniqueId
 ) {
   return new Promise((resolve) => {
-
     const data = {
       type: "image",
       image: "latest_media_" + uniqueId + fileExtension,
@@ -133,7 +219,9 @@ function displayImage(
     setTimeout(() => {
       try {
         fs.unlinkSync(filePath);
-        fs.unlinkSync(ID_FILE_PATH);
+        if (fs.existsSync(ID_FILE_PATH)) {
+          fs.unlinkSync(ID_FILE_PATH);
+        }
         resolve();
       } catch (error) {
         console.error("Error deleting the image:", error);
