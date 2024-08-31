@@ -10,7 +10,7 @@ let isTextProcessing = false;
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("textsend")
+    .setName("stream-text")
     .setDescription("Send text to display on Streamlabs with a duration")
     .addStringOption((option) =>
       option

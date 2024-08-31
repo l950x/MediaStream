@@ -17,12 +17,18 @@ let isProcessing = false;
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("mediasend")
+    .setName("stream-mediatext")
     .setDescription("Send media to display on Streamlabs with a duration")
     .addAttachmentOption((option) =>
       option
         .setName("media")
         .setDescription("The media to display")
+        .setRequired(true)
+    )
+    .addStringOption((option) =>
+      option
+        .setName("text")
+        .setDescription("The text to display")
         .setRequired(true)
     )
     .addIntegerOption((option) =>
@@ -63,6 +69,7 @@ async function processQueue() {
     try {
       const media = interaction.options.getAttachment("media");
       let duration = interaction.options.getInteger("duration") || 5;
+      const text = interaction.options.getString("text");
 
       if (media) {
         const fileExtension = path.extname(media.url).split("?")[0];
@@ -88,7 +95,8 @@ async function processQueue() {
             duration,
             interaction,
             fileExtension,
-            uniqueId
+            uniqueId,
+            text
           );
         } else if (fileExtension === ".mp4") {
           await displayVideo(filePath, interaction, uniqueId);
@@ -118,16 +126,16 @@ function displayImage(
   duration,
   interaction,
   fileExtension,
-  uniqueId
+  uniqueId,
+  text
 ) {
   return new Promise((resolve) => {
-    fs.writeFileSync(ID_FILE_PATH, uniqueId + "?" + fileExtension);
+    fs.writeFileSync(ID_FILE_PATH, uniqueId + "?both=" + text + fileExtension);
 
     setTimeout(() => {
       try {
         fs.unlinkSync(filePath);
         fs.unlinkSync(ID_FILE_PATH);
-        console.log(`Image deleted after ${duration} seconds.`);
         resolve();
       } catch (error) {
         console.error("Error deleting the image:", error);
