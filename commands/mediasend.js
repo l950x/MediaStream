@@ -12,6 +12,9 @@ ffmpeg.setFfmpegPath(
 
 const ID_FILE_PATH = path.join(__dirname, "../latest_id.txt");
 
+let interactionQueue = [];
+let isProcessing = false;
+
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("mediasend")
@@ -30,71 +33,133 @@ module.exports = {
           { name: "5 seconds", value: 5 },
           { name: "10 seconds", value: 10 },
           { name: "15 seconds", value: 15 },
-          { name: "20 seconds", value: 20 }
+          { name: "20 seconds", value: 20 },
+          { name: "60 seconds", value: 60 }
         )
     ),
 
   async execute(client, interaction) {
-    const media = interaction.options.getAttachment("media");
-    let duration = interaction.options.getInteger("duration");
+    await interaction.deferReply();
 
-    if (!duration) {
-      duration = 5;
+    interactionQueue.push(interaction);
+
+    await interaction.editReply({
+      content:
+        "Your media has been placed in the queue. Please wait while it is being processed.",
+    });
+
+    if (!isProcessing) {
+      processQueue();
     }
+  },
+};
 
-    if (media) {
-      const fileExtension = path.extname(media.url).split("?")[0];
-      const uniqueId = uuidv4();
-      const filePath = path.join(
-        __dirname,
-        "../uploads",
-        `latest_media_${uniqueId}${fileExtension}`
-      );
+async function processQueue() {
+  isProcessing = true;
 
-      try {
+  while (interactionQueue.length > 0) {
+    const interaction = interactionQueue.shift();
+
+    try {
+      const media = interaction.options.getAttachment("media");
+      let duration = interaction.options.getInteger("duration") || 5;
+
+      if (media) {
+        const fileExtension = path.extname(media.url).split("?")[0];
+        const uniqueId = uuidv4();
+        const filePath = path.join(
+          __dirname,
+          "../uploads",
+          `latest_media_${uniqueId}${fileExtension}`
+        );
+
         const response = await fetch(media.url);
         const buffer = await response.buffer();
         fs.writeFileSync(filePath, buffer);
 
-        await interaction.reply({
+        await interaction.editReply({
           content: `Media received with ID: ${uniqueId} and will be displayed for ${duration} seconds on Streamlabs!`,
           files: [new AttachmentBuilder(filePath)],
         });
 
         if ([".png", ".jpg", ".jpeg"].includes(fileExtension)) {
-          fs.writeFileSync(ID_FILE_PATH, uniqueId + "?" + fileExtension);
-          setTimeout(() => {
-            fs.unlinkSync(filePath);
-            console.log(`Image deleted after ${duration} seconds.`);
-          }, duration * 1000);
+          await displayImage(
+            filePath,
+            duration,
+            interaction,
+            fileExtension,
+            uniqueId
+          );
         } else if (fileExtension === ".mp4") {
-          ffmpeg.ffprobe(filePath, (err, metadata) => {
-            if (err) {
-              console.error("Error fetching video metadata:", err);
-              return;
-            }
-            const videoDuration = metadata.format.duration;
-            fs.writeFileSync(ID_FILE_PATH, uniqueId + "?vid=" + videoDuration);
-
-            setTimeout(() => {
-              fs.unlinkSync(filePath);
-              fs.unlinkSync(ID_FILE_PATH);
-              console.log(`Video deleted after ${videoDuration} seconds.`);
-            }, videoDuration * 1000);
-          });
+          await displayVideo(filePath, interaction, uniqueId);
         }
-      } catch (error) {
-        console.error("Error downloading or saving the media:", error);
-        await interaction.reply({
+      } else {
+        await interaction.editReply({
+          content: "Please provide media to send.",
+          ephemeral: true,
+        });
+      }
+    } catch (error) {
+      console.error("Error processing interaction:", error);
+      if (!interaction.replied && !interaction.deferred) {
+        await interaction.editReply({
           content: "There was an error processing the media. Please try again.",
           ephemeral: true,
         });
       }
-    } else {
-      await interaction.reply({
-        content: "Please provide media to send.",
-        ephemeral: true,
-      });
     }
-  },
-};
+  }
+
+  isProcessing = false;
+}
+
+function displayImage(
+  filePath,
+  duration,
+  interaction,
+  fileExtension,
+  uniqueId
+) {
+  return new Promise((resolve) => {
+    fs.writeFileSync(ID_FILE_PATH, uniqueId + "?" + fileExtension);
+
+    setTimeout(() => {
+      try {
+        fs.unlinkSync(filePath);
+        fs.unlinkSync(ID_FILE_PATH);
+        console.log(`Image deleted after ${duration} seconds.`);
+        resolve();
+      } catch (error) {
+        console.error("Error deleting the image:", error);
+        resolve();
+      }
+    }, duration * 1000);
+  });
+}
+
+function displayVideo(filePath, interaction, uniqueId) {
+  return new Promise((resolve) => {
+    ffmpeg.ffprobe(filePath, (err, metadata) => {
+      if (err) {
+        console.error("Error fetching video metadata:", err);
+        resolve();
+        return;
+      }
+      const videoDuration = metadata.format.duration;
+
+      fs.writeFileSync(ID_FILE_PATH, uniqueId + "?vid=" + videoDuration);
+
+      setTimeout(() => {
+        try {
+          fs.unlinkSync(filePath);
+          fs.unlinkSync(ID_FILE_PATH);
+          console.log(`Video deleted after ${videoDuration} seconds.`);
+          resolve();
+        } catch (error) {
+          console.error("Error deleting the video:", error);
+          resolve();
+        }
+      }, videoDuration * 1000);
+    });
+  });
+}

@@ -48,7 +48,7 @@
   </head>
   <body>
     <div id="media-container">
-      <img id="img" src="/uploads/temp.png" alt="" />
+      <img id="img" src="" alt="" />
       <video id="video" autoplay></video>
       <p class="text"></p>
     </div>
@@ -79,8 +79,6 @@
                 img.style.display = "block";
                 video.style.display = "none";
                 text.style.display = "none";
-
-                console.log("img: " + src);
               } else {
                 src = "/uploads/latest_media_" + id + ".mp4";
                 video.src = src;
@@ -88,7 +86,6 @@
                 img.style.display = "none";
                 text.style.display = "none";
                 video.volume = 0.05;
-                console.log("vid: " + src);
               }
               mediaFetched = true;
             }
@@ -105,7 +102,6 @@
           if (mediaFetched) {
             clearInterval(interval);
           } else {
-            console.log("Fetching media...");
             fetchMedia();
           }
         }, 1000);

@@ -1,19 +1,17 @@
 const { SlashCommandBuilder } = require("@discordjs/builders");
-const { AttachmentBuilder, Embed } = require("discord.js");
+const { EmbedBuilder } = require("discord.js");
 const path = require("path");
 const fs = require("fs");
-const fetch = require("node-fetch");
-const ffmpeg = require("fluent-ffmpeg");
-const { v4: uuidv4 } = require("uuid");
-const { text } = require("body-parser");
-const { EmbedBuilder } = require("discord.js");
 
 const ID_FILE_PATH = path.join(__dirname, "../latest_id.txt");
+
+let textInteractionQueue = [];
+let isTextProcessing = false;
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("textsend")
-    .setDescription("Send media to display on Streamlabs with a duration")
+    .setDescription("Send text to display on Streamlabs with a duration")
     .addStringOption((option) =>
       option
         .setName("text")
@@ -23,7 +21,7 @@ module.exports = {
     .addIntegerOption((option) =>
       option
         .setName("duration")
-        .setDescription("Duration to display the media (seconds)")
+        .setDescription("Duration to display the text (seconds)")
         .addChoices(
           { name: "5 seconds", value: 5 },
           { name: "10 seconds", value: 10 },
@@ -33,16 +31,33 @@ module.exports = {
     ),
 
   async execute(client, interaction) {
-    const text = interaction.options.getString("text");
-    let duration = interaction.options.getInteger("duration");
+    await interaction.deferReply();
 
-    if (!duration) {
-      duration = 5;
+    textInteractionQueue.push(interaction);
+
+    await interaction.editReply({
+      content:
+        "Your text has been placed in the queue. Please wait while it is being processed.",
+    });
+
+    if (!isTextProcessing) {
+      processTextQueue();
     }
+  },
+};
 
-    if (text) {
-      try {
-        await interaction.reply({
+function processTextQueue() {
+  isTextProcessing = true;
+
+  if (textInteractionQueue.length > 0) {
+    const interaction = textInteractionQueue.shift();
+
+    try {
+      const text = interaction.options.getString("text");
+      let duration = interaction.options.getInteger("duration") || 5;
+
+      if (text) {
+        interaction.editReply({
           embeds: [
             new EmbedBuilder()
               .setColor("#b300ff")
@@ -55,22 +70,37 @@ module.exports = {
         });
 
         fs.writeFileSync(ID_FILE_PATH, text + "?text");
+
         setTimeout(() => {
-          fs.unlinkSync(ID_FILE_PATH);
-          console.log(`Text deleted after ${duration} seconds.`);
+          try {
+            fs.unlinkSync(ID_FILE_PATH);
+            console.log(`Text deleted after ${duration} seconds.`);
+          } catch (error) {
+            console.error("Error deleting the text:", error);
+          }
+
+          processTextQueue();
         }, duration * 1000);
-      } catch (error) {
-        console.error("Error saving the text:", error);
-        await interaction.reply({
+      } else {
+        interaction.editReply({
+          content: "Please provide text to send.",
+          ephemeral: true,
+        });
+
+        processTextQueue();
+      }
+    } catch (error) {
+      console.error("Error processing interaction:", error);
+      if (!interaction.replied && !interaction.deferred) {
+        interaction.editReply({
           content: "There was an error processing the text. Please try again.",
           ephemeral: true,
         });
       }
-    } else {
-      await interaction.reply({
-        content: "Please provide text to send.",
-        ephemeral: true,
-      });
+
+      processTextQueue();
     }
-  },
-};
+  } else {
+    isTextProcessing = false;
+  }
+}
