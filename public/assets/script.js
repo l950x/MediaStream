@@ -21,16 +21,9 @@ async function fetchMedia() {
         const image = data.image;
         const duration = data.duration;
         const videoLink = data.videoLink;
-        console.log("id: " + id);
-        console.log(`Type: ${type}`);
-        console.log(`Content: ${content}`);
-        console.log(`Image: ${image}`);
-        console.log(`Duration: ${duration}`);
-        console.log(`Video Link: ${videoLink}`);
 
         const durationInMs = duration * 1000 - 1000;
         handleMediaDisplay(type, content, image, videoLink, durationInMs, id);
-        console.log("mediaFetcheddd: " + mediaFetched);
       }
     } else {
       console.error("Failed to fetch media.");
@@ -89,10 +82,10 @@ function displayText(content, durationInMs, id) {
         .then((response) => response.json())
         .then((data) => {
           if (data.success) {
-            console.log("Fichier supprimé avec succès.");
+            console.log("File deleted successfully.");
             mediaFetched = false;
           } else {
-            console.log("Erreur lors de la suppression du fichier.");
+            console.log("Error deleting file.");
           }
         });
     }, animationDuration);
@@ -124,14 +117,14 @@ function displayImage(image, durationInMs, id) {
         .then((response) => response.json())
         .then((data) => {
           if (data.success) {
-            console.log("Fichier supprimé avec succès.");
+            console.log("File deleted successfully.");
             mediaFetched = false;
           } else {
-            console.log("Erreur lors de la suppression du fichier.");
+            console.log("Error deleting file.");
           }
         })
         .catch((error) => {
-          console.error("Erreur:", error);
+          console.error("Error:", error);
         });
     }, animationDuration);
   }, durationInMs);
@@ -166,10 +159,10 @@ function displayVideo(content, durationInMs, id, videoLink) {
         .then((response) => response.json())
         .then((data) => {
           if (data.success) {
-            console.log("Fichier supprimé avec succès.");
+            console.log("File deleted successfully.");
             mediaFetched = false;
           } else {
-            console.log("Erreur lors de la suppression du fichier.");
+            console.log("Error deleting file.");
           }
         });
     }, animationDuration);
@@ -177,7 +170,6 @@ function displayVideo(content, durationInMs, id, videoLink) {
 }
 
 function displayImageText(content, image, durationInMs, id) {
-  console.log("mediafetched: " + mediaFetched);
   console.log("Displaying image and text");
 
   const mediaContainer = document.createElement("div");
@@ -217,14 +209,14 @@ function displayImageText(content, image, durationInMs, id) {
         .then((response) => response.json())
         .then((data) => {
           if (data.success) {
-            console.log("Fichier supprimé avec succès.");
+            console.log("File deleted successfully.");
             mediaFetched = false;
           } else {
-            console.log("Erreur lors de la suppression du fichier.");
+            console.log("Error deleting file.");
           }
         })
         .catch((error) => {
-          console.error("Erreur:", error);
+          console.error("Error:", error);
         });
     }, animationDuration);
   }, durationInMs);
@@ -232,7 +224,6 @@ function displayImageText(content, image, durationInMs, id) {
 
 function displayImageVideo(content, videoLink, durationInMs, id) {
   console.log("Displaying image and video");
-  console.log("videoLink: " + videoLink);
 
   const mediaContainer = document.createElement("div");
   const videoElement = document.createElement("video");
@@ -273,14 +264,14 @@ function displayImageVideo(content, videoLink, durationInMs, id) {
         .then((response) => response.json())
         .then((data) => {
           if (data.success) {
-            console.log("Fichier supprimé avec succès.");
+            console.log("File deleted successfully.");
             mediaFetched = false;
           } else {
-            console.log("Erreur lors de la suppression du fichier.");
+            console.log("Error deleting file.");
           }
         })
         .catch((error) => {
-          console.error("Erreur:", error);
+          console.error("Error:", error);
         });
     }, animationDuration);
   }, durationInMs);
