@@ -9,12 +9,10 @@ const {
 const path = require("path");
 const fs = require("fs");
 const { v4: uuidv4 } = require("uuid");
+const adminCheck = require("../features/adminCheck");
 
 const ID_FILE_PATH = path.join(__dirname, "../latest_id.txt");
-const CHANNEL_ID = '1147116498079461466';
-
-let textInteractionQueue = [];
-let isTextProcessing = false;
+const CHANNEL_ID = "1279736846045151293";
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -40,40 +38,72 @@ module.exports = {
 
   async execute(client, interaction) {
     await interaction.deferReply();
+    const uniqueId = uuidv4();
+    console.log("UniqueID: ", uniqueId);
 
-    textInteractionQueue.push(interaction);
+    const ID_FILE_PATH = path.join(
+      __dirname,
+      "../public/assets/idfiles/latest_id_" + uniqueId + ".txt"
+    );
 
-    await interaction.editReply({
-      content:
-        "Your text has been placed in the queue. Please wait while it is being processed.",
-    });
-
-    if (!isTextProcessing) {
-      processTextQueue(client);
-    }
+    processQueue(client, interaction, ID_FILE_PATH, uniqueId);
   },
 };
 
-async function processTextQueue(client) {
-  if (isTextProcessing) return;
-  isTextProcessing = true;
+async function processQueue(client, interaction, ID_FILE_PATH, uniqueId) {
+  try {
+    const text = interaction.options.getString("text");
+    let duration = interaction.options.getInteger("duration") || 5;
 
-  while (textInteractionQueue.length > 0) {
-    const interaction = textInteractionQueue.shift();
-    const uniqueId = uuidv4();
+    if (text) {
+      const firstEmbed = new EmbedBuilder()
+        .setColor("#ff8000")
+        .setTitle("Paname Boss")
+        .setDescription(
+          "Your text has been placed in the queue. Please wait while it is being processed."
+        )
+        .addFields({ name: "Text", value: text })
+        .addFields({ name: "Duration", value: `${duration} seconds` });
+      await interaction.editReply({
+        embeds: [firstEmbed],
+      });
 
-    try {
-      const text = interaction.options.getString("text");
-      let duration = interaction.options.getInteger("duration") || 5;
+      if (await adminCheck(interaction.member.id)) {
+        try {
+          const data = {
+            id: uniqueId,
+            type: "text",
+            content: text,
+            duration: duration,
+          };
+          const response = await fetch("http://localhost:3000/api/update-id", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(data),
+          });
 
-      if (text) {
+          if (response.ok) {
+            console.log("ID successfully sent to the API");
+          } else {
+            console.error("Failed to send ID to the API");
+          }
+        } catch (error) {
+          console.error("Error sending ID to the API:", error);
+        }
+        const embed = new EmbedBuilder()
+          .setDescription(`Text approved! It will now be processed.`)
+          .setColor("#ff8000");
+
+        await displayText(text, duration, interaction, null, embed, firstEmbed);
+      } else {
         const embed = new EmbedBuilder()
           .setTitle("Text Validation")
-          .setDescription(
-            `Please approve or reject the text to be displayed for ${duration} seconds.`
-          )
-          .setColor(0x00ff00)
-          .addFields({ name: "Text", value: text });
+          .setDescription(`Please approve or reject the text to be displayed.`)
+          .setColor(0xff0000)
+          .addFields({ name: "Text", value: text })
+          .addFields({ name: "Duration", value: `${duration} seconds` });
 
         const approveButton = new ButtonBuilder()
           .setCustomId(`approve_text_${uniqueId}`)
@@ -91,9 +121,8 @@ async function processTextQueue(client) {
         );
 
         const channel = await client.channels.fetch(CHANNEL_ID);
-        
+
         const message = await channel.send({
-          content: "Text received. Please approve or reject.",
           embeds: [embed],
           components: [row],
         });
@@ -111,18 +140,57 @@ async function processTextQueue(client) {
         collector.on("collect", async (i) => {
           if (i.user.id === interaction.user.id) {
             if (i.customId === `approve_text_${uniqueId}`) {
+              try {
+                const data = {
+                  id: uniqueId,
+                  type: "text",
+                  content: text,
+                  duration: duration,
+                };
+                const response = await fetch(
+                  "http://localhost:3000/api/update-id",
+                  {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(data),
+                  }
+                );
+
+                if (response.ok) {
+                  console.log("ID successfully sent to the API");
+                } else {
+                  console.error("Failed to send ID to the API");
+                }
+              } catch (error) {
+                console.error("Error sending ID to the API:", error);
+              }
+              embed.setDescription(`Text approved! It will now be processed.`);
+              embed.setColor("#ff8000");
               await i.update({
-                content: "Text approved! It will now be processed.",
                 embeds: [embed],
                 components: [],
               });
 
-              await displayText(text, duration, interaction);
+              await displayText(
+                text,
+                duration,
+                interaction,
+                i,
+                embed,
+                firstEmbed
+              );
             } else if (i.customId === `reject_text_${uniqueId}`) {
+              embed.setDescription(`Text rejected and will not be processed.`);
               await i.update({
-                content: "Text rejected and will not be processed.",
                 embeds: [embed],
                 components: [],
+              });
+              firstEmbed.setDescription(`Text rejected.`);
+              firstEmbed.setColor(0xff0000);
+              interaction.editReply({
+                embeds: [firstEmbed],
               });
             }
 
@@ -137,38 +205,34 @@ async function processTextQueue(client) {
 
         collector.on("end", async (collected, reason) => {
           if (reason === "time") {
-            await message.edit({
+            firstEmbed.setDescription(`Validation timed out.`);
+            firstEmbed.setColor(0xff0000);
+            interaction.editReply({
+              embeds: [firstEmbed],
+            });
+            await interaction.editReply({
               content: "Validation timed out.",
               components: [],
             });
           }
-
-          isTextProcessing = false;
-          processTextQueue(client);
         });
-      } else {
-        await interaction.editReply({
-          content: "Please provide text to send.",
-          ephemeral: true,
-        });
-        isTextProcessing = false;
-        processTextQueue(client);
       }
-    } catch (error) {
-      console.error("Error processing interaction:", error);
+    } else {
       await interaction.editReply({
-        content: "There was an error processing the text. Please try again.",
+        content: "Please provide text to send.",
         ephemeral: true,
       });
-      isTextProcessing = false;
-      processTextQueue(client);
     }
+  } catch (error) {
+    console.error("Error processing interaction:", error);
+    await interaction.editReply({
+      content: "There was an error processing the text. Please try again.",
+      ephemeral: true,
+    });
   }
-
-  isTextProcessing = false;
 }
 
-function displayText(text, duration, interaction) {
+function displayText(text, duration, interaction, i, embed, firstEmbed) {
   return new Promise((resolve) => {
     const data = {
       type: "text",
@@ -177,11 +241,23 @@ function displayText(text, duration, interaction) {
     };
 
     fs.writeFileSync(ID_FILE_PATH, JSON.stringify(data));
+    firstEmbed.setDescription(`text approved and successfully processed.`);
+    firstEmbed.setColor(0x00ff00);
+    interaction.editReply({
+      embeds: [firstEmbed],
+    });
 
     setTimeout(() => {
       try {
-        fs.unlinkSync(ID_FILE_PATH);
-        console.log(`Text deleted after ${duration} seconds.`);
+        embed.setColor(0x00ff00);
+        embed.setDescription(`Text approved and successfully processed.`);
+
+        if (i && i.message) {
+          i.message.edit({
+            embeds: [embed],
+            components: [],
+          });
+        }
         resolve();
       } catch (error) {
         console.error("Error deleting the text:", error);

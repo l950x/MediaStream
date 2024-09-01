@@ -17,6 +17,7 @@
     "nodemon": "^3.1.0",
     "openai": "^4.24.1",
     "request": "^2.88.2",
+    "tough-cookie": "^4.1.4",
     "ts-node": "^10.9.2",
     "twilio": "^4.20.0"
   },

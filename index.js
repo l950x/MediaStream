@@ -55,7 +55,7 @@ LoadCommands()
       second: "2-digit",
     });
     client.on("ready", () => {
-      client.user.setActivity("l.950 on top");
+      client.user.setActivity("/help");
     });
 
     client.login(token);

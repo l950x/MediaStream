@@ -12,16 +12,13 @@ const fs = require("fs");
 const fetch = require("node-fetch");
 const ffmpeg = require("fluent-ffmpeg");
 const { v4: uuidv4 } = require("uuid");
+const adminCheck = require("../features/adminCheck");
 
 ffmpeg.setFfmpegPath(
   "C:\\xampp\\htdocs\\ffmpeg-7.0.2-essentials_build\\bin\\ffmpeg.exe"
 );
 
-const ID_FILE_PATH = path.join(__dirname, "../latest_id.txt");
-const CHANNEL_ID = "1147116498079461466";
-
-let interactionQueue = [];
-let isProcessing = false;
+const CHANNEL_ID = "1279736846045151293";
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -49,50 +46,129 @@ module.exports = {
   async execute(client, interaction) {
     await interaction.deferReply();
 
-    interactionQueue.push(interaction);
+    const uniqueId = uuidv4();
+    console.log("UniqueID: ", uniqueId);
 
-    await interaction.editReply({
-      content:
-        "Your media has been placed in the queue. Please wait while it is being processed.",
-    });
+    const ID_FILE_PATH = path.join(
+      __dirname,
+      "../public/assets/idfiles/latest_id_" + uniqueId + ".txt"
+    );
 
-    if (!isProcessing) {
-      processQueue(client);
-    }
+    processQueue(client, interaction, ID_FILE_PATH, uniqueId);
   },
 };
 
-async function processQueue(client) {
-  if (isProcessing) return;
-  isProcessing = true;
+async function processQueue(client, interaction, ID_FILE_PATH, uniqueId) {
+  try {
+    const media = interaction.options.getAttachment("media");
+    let duration = interaction.options.getInteger("duration") || 5;
 
-  while (interactionQueue.length > 0) {
-    const interaction = interactionQueue.shift();
+    if (media) {
+      const fileExtension = path.extname(media.url).split("?")[0];
+      const filePath = path.join(
+        __dirname,
+        "../public/assets/uploads",
+        `latest_media_${uniqueId}${fileExtension}`
+      );
 
-    try {
-      const media = interaction.options.getAttachment("media");
-      let duration = interaction.options.getInteger("duration") || 5;
+      const response = await fetch(media.url);
+      const buffer = await response.buffer();
+      fs.writeFileSync(filePath, buffer);
+      let type = "";
+      let videoLink = "";
 
-      if (media) {
-        const fileExtension = path.extname(media.url).split("?")[0];
-        const uniqueId = uuidv4();
-        const filePath = path.join(
-          __dirname,
-          "../uploads",
-          `latest_media_${uniqueId}${fileExtension}`
+      if (fileExtension === ".mp4") {
+        type = "video";
+        videoLink = "latest_media_" + uniqueId + ".mp4";
+        await new Promise((resolve, reject) => {
+          ffmpeg.ffprobe(filePath, (err, metadata) => {
+            if (err) {
+              reject(err);
+            } else {
+              duration = metadata.format.duration;
+              resolve();
+            }
+          });
+        });
+      } else {
+        type = "image";
+        duration = duration || 5;
+      }
+
+      const firstEmbed = new EmbedBuilder()
+        .setColor("#ff8000")
+        .setTitle("Paname Boss")
+        .setDescription(
+          "Your media has been placed in the queue. Please wait while it is being processed."
+        )
+        .addFields({ name: "Duration", value: `${duration} seconds` })
+        .setImage(`attachment://latest_media_${uniqueId}${fileExtension}`);
+      await interaction.editReply({
+        embeds: [firstEmbed],
+        files: [new AttachmentBuilder(filePath)],
+      });
+
+      if (await adminCheck(interaction.member.id)) {
+        try {
+          const data = {
+            id: uniqueId,
+            type: type,
+            image: "latest_media_" + uniqueId + fileExtension,
+            videoLink: videoLink,
+            duration: duration,
+          };
+          const response = await fetch("http://localhost:3000/api/update-id", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(data),
+          });
+
+          if (response.ok) {
+            console.log("ID successfully sent to the API");
+          } else {
+            console.error("Failed to send ID to the API");
+          }
+        } catch (error) {
+          console.error("Error sending ID to the API:", error);
+        }
+        if (fileExtension === ".mp4") {
+          await displayVideo(
+            filePath,
+            interaction,
+            uniqueId,
+            null,
+            duration,
+            null,
+            firstEmbed
+          );
+        } else {
+          await displayImage(
+            filePath,
+            duration,
+            interaction,
+            fileExtension,
+            uniqueId,
+            null,
+            null,
+            firstEmbed
+          );
+        }
+      } else {
+        const embed = new EmbedBuilder();
+        embed.setTitle("Media Validation");
+        embed.setDescription(
+          `Please approve or reject the media to be displayed for:`
         );
-
-        const response = await fetch(media.url);
-        const buffer = await response.buffer();
-        fs.writeFileSync(filePath, buffer);
-
-        const embed = new EmbedBuilder()
-          .setTitle("Media Validation")
-          .setDescription(
-            `Please approve or reject the media to be displayed for ${duration} seconds.`
-          )
-          .setColor(0x00ff00)
-          .setImage(`attachment://latest_media_${uniqueId}${fileExtension}`);
+        embed.addFields([
+          {
+            name: "Duration",
+            value: `${duration} seconds`,
+          },
+        ]);
+        embed.setColor(0xff0000);
+        embed.setImage(`attachment://latest_media_${uniqueId}${fileExtension}`);
 
         const approveButton = new ButtonBuilder()
           .setCustomId(`approve_${uniqueId}`)
@@ -112,7 +188,6 @@ async function processQueue(client) {
         const channel = await client.channels.fetch(CHANNEL_ID);
 
         const message = await channel.send({
-          content: "Media received. Please approve or reject.",
           embeds: [embed],
           components: [row],
           files: [new AttachmentBuilder(filePath)],
@@ -131,9 +206,39 @@ async function processQueue(client) {
         collector.on("collect", async (i) => {
           if (i.user.id === interaction.user.id) {
             if (i.customId === `approve_${uniqueId}`) {
+              try {
+                const data = {
+                  id: uniqueId,
+                  type: type,
+                  image: "latest_media_" + uniqueId + fileExtension,
+                  videoLink: videoLink,
+                  duration: duration,
+                };
+                const response = await fetch(
+                  "http://localhost:3000/api/update-id",
+                  {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(data),
+                  }
+                );
+
+                if (response.ok) {
+                  console.log("ID successfully sent to the API");
+                } else {
+                  console.error("Failed to send ID to the API");
+                }
+              } catch (error) {
+                console.error("Error sending ID to the API:", error);
+              }
+              embed.setDescription(`Media approved! It will now be processed.`);
+              embed.setColor(0xffa500);
               await i.update({
-                content: "Media approved! It will now be processed.",
+                embeds: [embed],
                 components: [],
+                files: [new AttachmentBuilder(filePath)],
               });
 
               if ([".png", ".jpg", ".jpeg"].includes(fileExtension)) {
@@ -142,15 +247,32 @@ async function processQueue(client) {
                   duration,
                   interaction,
                   fileExtension,
-                  uniqueId
+                  uniqueId,
+                  i,
+                  embed,
+                  firstEmbed
                 );
               } else if (fileExtension === ".mp4") {
-                await displayVideo(filePath, interaction, uniqueId);
+                await displayVideo(
+                  filePath,
+                  interaction,
+                  uniqueId,
+                  i,
+                  duration,
+                  embed,
+                  firstEmbed
+                );
               }
             } else if (i.customId === `reject_${uniqueId}`) {
+              embed.setDescription(`Media rejected and will not be processed.`);
               await i.update({
-                content: "Media rejected and will not be processed.",
+                embeds: [embed],
                 components: [],
+              });
+              firstEmbed.setDescription(`Media rejected.`);
+              firstEmbed.setColor(0xff0000);
+              interaction.editReply({
+                embeds: [firstEmbed],
               });
               fs.unlinkSync(filePath);
             }
@@ -166,6 +288,11 @@ async function processQueue(client) {
 
         collector.on("end", async (collected, reason) => {
           if (reason === "time") {
+            firstEmbed.setDescription(`Validation timed out.`);
+            firstEmbed.setColor(0xff0000);
+            interaction.editReply({
+              embeds: [firstEmbed],
+            });
             await interaction.editReply({
               content: "Validation timed out.",
               components: [],
@@ -174,30 +301,21 @@ async function processQueue(client) {
               fs.unlinkSync(filePath);
             }
           }
-
-          isProcessing = false;
-          processQueue(client);
         });
-      } else {
-        await interaction.editReply({
-          content: "Please provide media to send.",
-          ephemeral: true,
-        });
-        isProcessing = false;
-        processQueue(client);
       }
-    } catch (error) {
-      console.error("Error processing interaction:", error);
+    } else {
       await interaction.editReply({
-        content: "There was an error processing the media. Please try again.",
+        content: "Please provide media to send.",
         ephemeral: true,
       });
-      isProcessing = false;
-      processQueue(client);
     }
+  } catch (error) {
+    console.error("Error processing interaction:", error);
+    await interaction.editReply({
+      content: "There was an error processing the media. Please try again.",
+      ephemeral: true,
+    });
   }
-
-  isProcessing = false;
 }
 
 function displayImage(
@@ -205,23 +323,28 @@ function displayImage(
   duration,
   interaction,
   fileExtension,
-  uniqueId
+  uniqueId,
+  i,
+  embed,
+  firstEmbed
 ) {
   return new Promise((resolve) => {
-    const data = {
-      type: "image",
-      image: "latest_media_" + uniqueId + fileExtension,
-      duration: duration,
-    };
-
-    fs.writeFileSync(ID_FILE_PATH, JSON.stringify(data));
+    firstEmbed.setDescription(`Media approved and successfully processed.`);
+    firstEmbed.setColor(0x00ff00);
+    interaction.editReply({
+      embeds: [firstEmbed],
+    });
 
     setTimeout(() => {
       try {
-        fs.unlinkSync(filePath);
-        if (fs.existsSync(ID_FILE_PATH)) {
-          fs.unlinkSync(ID_FILE_PATH);
+        if (embed) {
+          embed.setDescription(`Media approved and successfully processed.`);
+          embed.setColor(0x00ff00);
+          i.message.edit({
+            embeds: [embed],
+          });
         }
+
         resolve();
       } catch (error) {
         console.error("Error deleting the image:", error);
@@ -231,35 +354,37 @@ function displayImage(
   });
 }
 
-function displayVideo(filePath, interaction, uniqueId) {
+function displayVideo(
+  filePath,
+  interaction,
+  uniqueId,
+  i,
+  duration,
+  embed,
+  firstEmbed
+) {
   return new Promise((resolve) => {
-    ffmpeg.ffprobe(filePath, (err, metadata) => {
-      if (err) {
-        console.error("Error fetching video metadata:", err);
-        resolve();
-        return;
-      }
-      const videoDuration = metadata.format.duration + 1;
-
-      const data = {
-        type: "video",
-        content: "latest_media_" + uniqueId + ".mp4",
-        duration: videoDuration,
-      };
-
-      fs.writeFileSync(ID_FILE_PATH, JSON.stringify(data));
-
-      setTimeout(() => {
-        try {
-          fs.unlinkSync(filePath);
-          fs.unlinkSync(ID_FILE_PATH);
-          console.log(`Video deleted after ${videoDuration} seconds.`);
-          resolve();
-        } catch (error) {
-          console.error("Error deleting the video:", error);
-          resolve();
-        }
-      }, videoDuration * 1000);
+    firstEmbed.setDescription(`Media approved and successfully processed.`);
+    firstEmbed.setColor(0x00ff00);
+    interaction.editReply({
+      embeds: [firstEmbed],
     });
+
+    setTimeout(() => {
+      try {
+        if (embed) {
+          embed.setDescription(`Media approved and successfully processed.`);
+          embed.setColor(0x00ff00);
+          i.message.edit({
+            embeds: [embed],
+          });
+        }
+        console.log(`Video deleted after ${duration} seconds.`);
+        resolve();
+      } catch (error) {
+        console.error("Error deleting the video:", error);
+        resolve();
+      }
+    }, duration * 1000);
   });
 }
