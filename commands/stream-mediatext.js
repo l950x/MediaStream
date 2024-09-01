@@ -54,7 +54,6 @@ module.exports = {
       await interaction.deferReply();
 
       const uniqueId = uuidv4();
-      console.log("UniqueID: ", uniqueId);
 
       const ID_FILE_PATH = path.join(
         __dirname,
@@ -99,32 +98,23 @@ async function processQueue(client, interaction, ID_FILE_PATH, uniqueId) {
         `latest_media_${uniqueId}${fileExtension}`
       );
 
-      console.log("Fetching media from URL:", media.url);
-
       const response = await fetch(media.url);
       const buffer = await response.buffer();
       let type = "";
       let videoLink = "";
       fs.writeFileSync(filePath, buffer);
 
-      console.log("Media downloaded and saved to:", filePath);
-
       if (fileExtension === ".mp4") {
         type = "image-video";
         videoLink = "latest_media_" + uniqueId + ".mp4";
 
         try {
-          console.log("Getting video duration for:", filePath);
           duration = await new Promise((resolve, reject) => {
             ffmpeg.ffprobe(filePath, (err, metadata) => {
               if (err) {
                 console.error("ffprobe error:", err);
                 reject(err);
               } else {
-                console.log(
-                  "Video duration fetched:",
-                  metadata.format.duration
-                );
                 resolve(metadata.format.duration);
               }
             });
@@ -142,7 +132,6 @@ async function processQueue(client, interaction, ID_FILE_PATH, uniqueId) {
       } else {
         type = "image-text";
         duration = duration || 5;
-        console.log("Non-video media, set duration to:", duration);
       }
 
       const firstEmbed = new EmbedBuilder()
@@ -158,8 +147,6 @@ async function processQueue(client, interaction, ID_FILE_PATH, uniqueId) {
         embeds: [firstEmbed],
         files: [new AttachmentBuilder(filePath)],
       });
-
-      console.log("Sent confirmation message to user.");
 
       if (await adminCheck(interaction.member.id)) {
         console.log("User is an admin. Processing media directly.");
@@ -240,15 +227,12 @@ async function processQueue(client, interaction, ID_FILE_PATH, uniqueId) {
         );
 
         const channel = await client.channels.fetch(CHANNEL_ID);
-        console.log("Fetched approval channel:", channel.id);
 
         const message = await channel.send({
           embeds: [embed],
           components: [row],
           files: [new AttachmentBuilder(filePath)],
         });
-
-        console.log("Approval message sent. Waiting for approval.");
 
         const filter = (i) =>
           i.customId === `approve_${uniqueId}` ||
@@ -260,7 +244,6 @@ async function processQueue(client, interaction, ID_FILE_PATH, uniqueId) {
         });
 
         collector.on("collect", async (i) => {
-          console.log("Collector received interaction:", i.customId);
           if (i.customId === `approve_${uniqueId}`) {
             try {
               const data = {
@@ -290,7 +273,6 @@ async function processQueue(client, interaction, ID_FILE_PATH, uniqueId) {
             } catch (error) {
               console.error("Error sending ID to the API:", error);
             }
-            console.log("Media approved.");
             if ([".png", ".jpg", ".jpeg"].includes(fileExtension)) {
               embed.setDescription(
                 `Media approved! It will now be processed.\n\n**Text:** ${text}\n**Duration:** ${duration} seconds`
@@ -335,7 +317,6 @@ async function processQueue(client, interaction, ID_FILE_PATH, uniqueId) {
               );
             }
           } else if (i.customId === `reject_${uniqueId}`) {
-            console.log("Media rejected.");
             await i.update({
               content: "Media rejected and will not be processed.",
               components: [],
@@ -351,7 +332,6 @@ async function processQueue(client, interaction, ID_FILE_PATH, uniqueId) {
         });
 
         collector.on("end", async (collected, reason) => {
-          console.log("Collector ended with reason:", reason);
           if (reason === "time") {
             firstEmbed.setDescription(`Validation timed out.`);
             firstEmbed.setColor(0xff0000);
@@ -429,7 +409,6 @@ function displayVideo(
 
     setTimeout(() => {
       try {
-        console.log("Cleaning up video after duration:", duration);
         if (embed) {
           embed.setDescription(
             `Media approved and successfully processed.\n\n**Text:** ${text}\n**Duration:** ${duration} seconds`

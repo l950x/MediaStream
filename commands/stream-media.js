@@ -47,7 +47,6 @@ module.exports = {
     await interaction.deferReply();
 
     const uniqueId = uuidv4();
-    console.log("UniqueID: ", uniqueId);
 
     const ID_FILE_PATH = path.join(
       __dirname,
@@ -379,7 +378,6 @@ function displayVideo(
             embeds: [embed],
           });
         }
-        console.log(`Video deleted after ${duration} seconds.`);
         resolve();
       } catch (error) {
         console.error("Error deleting the video:", error);

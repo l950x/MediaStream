@@ -39,7 +39,6 @@ module.exports = {
   async execute(client, interaction) {
     await interaction.deferReply();
     const uniqueId = uuidv4();
-    console.log("UniqueID: ", uniqueId);
 
     const ID_FILE_PATH = path.join(
       __dirname,
