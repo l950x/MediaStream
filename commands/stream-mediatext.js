@@ -14,9 +14,8 @@ const ffmpeg = require("fluent-ffmpeg");
 const { v4: uuidv4 } = require("uuid");
 const adminCheck = require("../features/adminCheck");
 
-ffmpeg.setFfmpegPath(
-  "C:\\xampp\\htdocs\\ffmpeg-7.0.2-essentials_build\\bin\\ffmpeg.exe"
-);
+ffmpeg.setFfmpegPath(path.join(__dirname, "../ffmpeg/bin/ffmpeg.exe"));
+
 const {
   QUEUE_MESSAGE,
   APPROVE_MESSAGE_VALIDATION,

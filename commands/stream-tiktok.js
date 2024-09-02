@@ -29,9 +29,7 @@ const {
   STREAM_MEDIA_DESCRIPTION_DURATION,
 } = require("../config.json");
 
-ffmpeg.setFfmpegPath(
-  "C:\\xampp\\htdocs\\ffmpeg-7.0.2-essentials_build\\bin\\ffmpeg.exe"
-);
+ffmpeg.setFfmpegPath(path.join(__dirname, "../ffmpeg/bin/ffmpeg.exe"));
 
 const CHANNEL_ID = "1280128849534783570";
 
