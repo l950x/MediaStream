@@ -31,11 +31,35 @@ With Stream-Man, you can:
 - **Display dynamic text:** Send messages that will instantly appear on your Streamlabs scene for your audience to see.
 - **Share images:** Upload images from Discord and have them appear on your scene for a set duration.
 - **Stream videos:** Play videos directly on your stream, choosing the duration they will be displayed.
+- **Preview media before streaming:** Verify images and videos before they are sent to your stream with an accept or reject button (optional).
   
 This bot simplifies the management of your overlays and enhances the interactivity of your streams by centralizing all commands within Discord.
 
 ## 📑Demo
-[WIP]
+
+- /stream-text
+<img src="./public/assets/gifs/text1.gif"/>
+<hr/>
+
+- /stream-media | Image
+<img src="./public/assets/gifs/media1.gif"/>
+<hr/>
+
+- /stream-media | Video
+<img src="./public/assets/gifs/media_video.gif"/>
+<hr/>
+
+- /stream-mediatext | Image & text
+<img src="./public/assets/gifs/mediatext1.gif"/>
+<hr/>
+
+- /stream-mediatext | Video & text
+<img src="./public/assets/gifs/mediatext video1.gif"/>
+<hr/>
+
+- Media verif system
+<img src="./public/assets/gifs/verif1.gif"/>
+<hr/>
   
 ## ⚙️Installation
 

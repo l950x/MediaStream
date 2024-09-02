@@ -22,7 +22,7 @@ async function fetchMedia() {
         const duration = data.duration;
         const videoLink = data.videoLink;
 
-        const durationInMs = duration * 1000 - 1000;
+        const durationInMs = duration * 1000;
         handleMediaDisplay(type, content, image, videoLink, durationInMs, id);
       }
     } else {

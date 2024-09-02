@@ -31,7 +31,7 @@ ffmpeg.setFfmpegPath(
   "C:\\xampp\\htdocs\\ffmpeg-7.0.2-essentials_build\\bin\\ffmpeg.exe"
 );
 
-const CHANNEL_ID = "1279736846045151293";
+const CHANNEL_ID = "1280128849534783570";
 
 module.exports = {
   data: new SlashCommandBuilder()
