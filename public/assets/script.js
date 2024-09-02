@@ -52,6 +52,12 @@ function handleMediaDisplay(type, content, image, videoLink, durationInMs, id) {
     case "image-video":
       displayImageVideo(content, videoLink, durationInMs, id);
       break;
+    case "gif":
+      displayGif(image, durationInMs, id);
+      break;
+    case "gif-text":
+      displayGifText(image, content, durationInMs, id);
+      break;
     default:
       console.error("Unknown media type.");
   }
@@ -184,8 +190,8 @@ function displayImageText(content, image, durationInMs, id) {
   imageElement.src = `../assets/uploads/${image}`;
   textElement.innerHTML = content;
 
-  mediaContainer.appendChild(textElement);
   mediaContainer.appendChild(imageElement);
+  mediaContainer.appendChild(textElement);
   document.body.appendChild(mediaContainer);
 
   textElement.style.marginTop = "40%";
@@ -276,6 +282,86 @@ function displayImageVideo(content, videoLink, durationInMs, id) {
   }, durationInMs);
 }
 
+function displayGif(image, durationInMs, id) {
+  console.log("Displaying gif");
+  const mediaContainer = document.createElement("div");
+  const gifElement = document.createElement("img");
+  mediaContainer.id = "media-container";
+  gifElement.id = "gif";
+  gifElement.classList.add("anim");
+  gifElement.src = `../assets/uploads/${image}`;
+  mediaContainer.appendChild(gifElement);
+  document.body.appendChild(mediaContainer);
+  setTimeout(() => {
+    console.log("Timer finished, starting gif animation.");
+    gifElement.classList.add("animstop");
+    const animationDuration = 1000;
+    setTimeout(() => {
+      console.log("Removing gif and text elements from the DOM.");
+      mediaContainer.remove();
+      const fileName = `latest_id_${id}.txt`;
+      fetch(`http://localhost:3000/api/delete-file?name=${fileName}`, {
+        method: "DELETE",
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.success) {
+            console.log("File deleted successfully.");
+            mediaFetched = false;
+          } else {
+            console.log("Error deleting file.");
+          }
+        })
+        .catch((error) => {
+          console.error("Error:", error);
+        });
+    }, animationDuration);
+  }, durationInMs);
+}
+
+function displayGifText(image, content, durationInMs, id) {
+  console.log("Displaying gif and text");
+  const mediaContainer = document.createElement("div");
+  const gifElement = document.createElement("img");
+  const textElement = document.createElement("p");
+  mediaContainer.id = "media-container";
+  gifElement.id = "gif";
+  textElement.id = "text";
+  gifElement.classList.add("anim");
+  textElement.classList.add("anim");
+  textElement.style.marginTop = "40%";
+  gifElement.src = `../assets/uploads/${image}`;
+  textElement.innerHTML = content;
+  mediaContainer.appendChild(gifElement);
+  mediaContainer.appendChild(textElement);
+  document.body.appendChild(mediaContainer);
+  setTimeout(() => {
+    console.log("Timer finished, starting gif and text animation.");
+    gifElement.classList.add("animstop");
+    textElement.classList.add("animstop");
+    const animationDuration = 1000;
+    setTimeout(() => {
+      console.log("Removing gif and text elements from the DOM.");
+      mediaContainer.remove();
+      const fileName = `latest_id_${id}.txt`;
+      fetch(`http://localhost:3000/api/delete-file?name=${fileName}`, {
+        method: "DELETE",
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.success) {
+            console.log("File deleted successfully.");
+            mediaFetched = false;
+          } else {
+            console.log("Error deleting file.");
+          }
+        })
+        .catch((error) => {
+          console.error("Error:", error);
+        });
+    }, animationDuration);
+  }, durationInMs);
+}
 function checkAndFetchMedia() {
   if (!mediaFetched) {
     console.log("Fetching media...");

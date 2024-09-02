@@ -136,6 +136,9 @@ async function processQueue(client, interaction, uniqueId) {
           fs.unlinkSync(filePath);
           return;
         }
+      } else if (fileExtension === ".gif") {
+        type = "gif-text";
+        duration = duration || 5;
       } else {
         type = "image-text";
         duration = duration || 5;
@@ -180,7 +183,18 @@ async function processQueue(client, interaction, uniqueId) {
         } catch (error) {
           console.error("Error sending ID to the API:", error);
         }
-        if ([".png", ".jpg", ".jpeg"].includes(fileExtension)) {
+        if (fileExtension === ".mp4") {
+          await displayVideo(
+            filePath,
+            interaction,
+            uniqueId,
+            text,
+            null,
+            null,
+            duration,
+            firstEmbed
+          );
+        } else {
           await displayImage(
             filePath,
             duration,
@@ -190,17 +204,6 @@ async function processQueue(client, interaction, uniqueId) {
             text,
             null,
             null,
-            firstEmbed
-          );
-        } else if (fileExtension === ".mp4") {
-          await displayVideo(
-            filePath,
-            interaction,
-            uniqueId,
-            text,
-            null,
-            null,
-            duration,
             firstEmbed
           );
         }

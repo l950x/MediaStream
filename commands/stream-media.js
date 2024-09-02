@@ -97,6 +97,9 @@ async function processQueue(client, interaction, uniqueId) {
             }
           });
         });
+      } else if (fileExtension === ".gif") {
+        type = "gif";
+        duration = duration || 5;
       } else {
         type = "image";
         duration = duration || 5;
