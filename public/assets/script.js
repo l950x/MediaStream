@@ -133,7 +133,6 @@ function displayImage(image, durationInMs, id) {
 function displayVideo(content, durationInMs, id, videoLink) {
   console.log("Displaying video");
 
-  // Create elements
   const videoElement = document.createElement("video");
   videoElement.id = "video";
   videoElement.classList.add("anim");

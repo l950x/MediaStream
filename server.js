@@ -74,20 +74,23 @@ app.post("/api/update-id", (req, res) => {
 });
 
 app.delete("/api/delete-file", (req, res) => {
+  console.log("File deletion request received:", req.query.name);
   const fileName = req.query.name;
   const filePath = path.join(__dirname, "./public/assets/idfiles", fileName);
 
   fs.unlink(filePath, (err) => {
     if (err) {
-      console.log(err);
+      // console.log(err);
       return res.status(500).json({
         success: false,
         message: "Erreur lors de la suppression du fichier.",
         error: err,
       });
     }
+    console.log("File deleted successfully");
     res
       .status(200)
+
       .json({ success: true, message: "Fichier supprimé avec succès." });
   });
 });

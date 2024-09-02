@@ -9,6 +9,7 @@
     "cors": "^2.8.5",
     "discord.js": "^14.14.1",
     "dotenv": "^16.3.1",
+    "downloadtiktok": "^3.0.0",
     "express": "^4.19.2",
     "figlet": "^1.7.0",
     "fix-esm": "^1.0.1",

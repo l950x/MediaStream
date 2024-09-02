@@ -9,13 +9,12 @@ module.exports = {
     .setDescription("get logs from today"),
 
   async execute(client, interaction) {
-    if (!(await adminCheck(interaction.member))) {
-      return await interaction.reply({
-        content: "Permission required",
-        ephemeral: true,
-      });
+    if (!(await adminCheck(interaction.member.id))) {
+      return await interaction.reply(
+        "You do not have permission to use this command."
+      );
     }
-    const currentDate = new Date().toLocaleDateString('fr-CA');
+    const currentDate = new Date().toLocaleDateString("fr-CA");
     const logFilePath = `logs/log-${currentDate}.txt`;
 
     try {

@@ -8,9 +8,11 @@ module.exports = {
     .setDescription("Dead the bot"),
 
   async execute(client, interaction) {
-    if (!(await adminCheck(interaction.member))) {
-        return await interaction.reply("Permission required");
-      }
+    if (!(await adminCheck(interaction.member.id))) {
+      return await interaction.reply(
+        "You do not have permission to use this command."
+      );
+    }
 
     await interaction.reply("dead");
 
