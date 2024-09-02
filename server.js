@@ -93,5 +93,5 @@ app.delete("/api/delete-file", (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`Serveur lancé sur http://localhost:${port}`);
+  // console.log(`Serveur lancé sur http://localhost:${port}`);
 });

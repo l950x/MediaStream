@@ -14,6 +14,19 @@ const ffmpeg = require("fluent-ffmpeg");
 const { v4: uuidv4 } = require("uuid");
 const adminCheck = require("../features/adminCheck");
 
+const {
+  QUEUE_MESSAGE,
+  APPROVE_MESSAGE_VALIDATION,
+  APPROVE_MESSAGE,
+  APPROVE_MESSAGE_USER,
+  REJECT_MESSAGE,
+  REJECT_MESSAGE_USER,
+  VALIDATION_TIMED_OUT,
+  STREAM_MEDIA_DESCRIPTION,
+  STREAM_MEDIA_DESCRIPTION_MEDIA,
+  STREAM_MEDIA_DESCRIPTION_DURATION,
+} = require("../config.json");
+
 ffmpeg.setFfmpegPath(
   "C:\\xampp\\htdocs\\ffmpeg-7.0.2-essentials_build\\bin\\ffmpeg.exe"
 );
@@ -23,17 +36,17 @@ const CHANNEL_ID = "1279736846045151293";
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("stream-media")
-    .setDescription("Send media to display on Streamlabs with a duration")
+    .setDescription(STREAM_MEDIA_DESCRIPTION)
     .addAttachmentOption((option) =>
       option
         .setName("media")
-        .setDescription("The media to display")
+        .setDescription(STREAM_MEDIA_DESCRIPTION_MEDIA)
         .setRequired(true)
     )
     .addIntegerOption((option) =>
       option
         .setName("duration")
-        .setDescription("Duration to display the media (seconds)")
+        .setDescription(STREAM_MEDIA_DESCRIPTION_DURATION)
         .addChoices(
           { name: "5 seconds", value: 5 },
           { name: "10 seconds", value: 10 },
@@ -48,16 +61,11 @@ module.exports = {
 
     const uniqueId = uuidv4();
 
-    const ID_FILE_PATH = path.join(
-      __dirname,
-      "../public/assets/idfiles/latest_id_" + uniqueId + ".txt"
-    );
-
-    processQueue(client, interaction, ID_FILE_PATH, uniqueId);
+    processQueue(client, interaction, uniqueId);
   },
 };
 
-async function processQueue(client, interaction, ID_FILE_PATH, uniqueId) {
+async function processQueue(client, interaction, uniqueId) {
   try {
     const media = interaction.options.getAttachment("media");
     let duration = interaction.options.getInteger("duration") || 5;
@@ -97,9 +105,7 @@ async function processQueue(client, interaction, ID_FILE_PATH, uniqueId) {
       const firstEmbed = new EmbedBuilder()
         .setColor("#ff8000")
         .setTitle("Paname Boss")
-        .setDescription(
-          "Your media has been placed in the queue. Please wait while it is being processed."
-        )
+        .setDescription(QUEUE_MESSAGE)
         .addFields({ name: "Duration", value: `${duration} seconds` })
         .setImage(`attachment://latest_media_${uniqueId}${fileExtension}`);
       await interaction.editReply({
@@ -157,9 +163,7 @@ async function processQueue(client, interaction, ID_FILE_PATH, uniqueId) {
       } else {
         const embed = new EmbedBuilder();
         embed.setTitle("Media Validation");
-        embed.setDescription(
-          `Please approve or reject the media to be displayed for:`
-        );
+        embed.setDescription(APPROVE_MESSAGE_VALIDATION);
         embed.addFields([
           {
             name: "Duration",
@@ -191,6 +195,13 @@ async function processQueue(client, interaction, ID_FILE_PATH, uniqueId) {
           components: [row],
           files: [new AttachmentBuilder(filePath)],
         });
+
+        let video = null;
+        if (fileExtension === ".mp4") {
+          video = await channel.send({
+            files: [new AttachmentBuilder(filePath)],
+          });
+        }
 
         const filter = (i) =>
           i.customId === `approve_${uniqueId}` ||
@@ -232,8 +243,9 @@ async function processQueue(client, interaction, ID_FILE_PATH, uniqueId) {
               } catch (error) {
                 console.error("Error sending ID to the API:", error);
               }
-              embed.setDescription(`Media approved! It will now be processed.`);
-              embed.setColor(0xffa500);
+              embed.setDescription(APPROVE_MESSAGE);
+              embed.setColor(0x00ff00);
+
               await i.update({
                 embeds: [embed],
                 components: [],
@@ -262,18 +274,24 @@ async function processQueue(client, interaction, ID_FILE_PATH, uniqueId) {
                   firstEmbed
                 );
               }
+              if (video) {
+                video.delete();
+              }
             } else if (i.customId === `reject_${uniqueId}`) {
-              embed.setDescription(`Media rejected and will not be processed.`);
+              embed.setDescription(REJECT_MESSAGE);
               await i.update({
                 embeds: [embed],
                 components: [],
               });
-              firstEmbed.setDescription(`Media rejected.`);
+              firstEmbed.setDescription(REJECT_MESSAGE_USER);
               firstEmbed.setColor(0xff0000);
               interaction.editReply({
                 embeds: [firstEmbed],
               });
               fs.unlinkSync(filePath);
+              if (video) {
+                video.delete();
+              }
             }
 
             collector.stop();
@@ -287,17 +305,19 @@ async function processQueue(client, interaction, ID_FILE_PATH, uniqueId) {
 
         collector.on("end", async (collected, reason) => {
           if (reason === "time") {
-            firstEmbed.setDescription(`Validation timed out.`);
+            firstEmbed.setDescription(VALIDATION_TIMED_OUT);
             firstEmbed.setColor(0xff0000);
             interaction.editReply({
               embeds: [firstEmbed],
             });
-            await interaction.editReply({
-              content: "Validation timed out.",
+            embed.setDescription(VALIDATION_TIMED_OUT);
+            embed.setColor(0xff0000);
+            message.edit({
+              embeds: [embed],
               components: [],
             });
-            if (fs.existsSync(filePath)) {
-              fs.unlinkSync(filePath);
+            if (video) {
+              video.delete();
             }
           }
         });
@@ -328,7 +348,7 @@ function displayImage(
   firstEmbed
 ) {
   return new Promise((resolve) => {
-    firstEmbed.setDescription(`Media approved and successfully processed.`);
+    firstEmbed.setDescription(APPROVE_MESSAGE_USER);
     firstEmbed.setColor(0x00ff00);
     interaction.editReply({
       embeds: [firstEmbed],
@@ -337,7 +357,7 @@ function displayImage(
     setTimeout(() => {
       try {
         if (embed) {
-          embed.setDescription(`Media approved and successfully processed.`);
+          embed.setDescription(APPROVE_MESSAGE_USER);
           embed.setColor(0x00ff00);
           i.message.edit({
             embeds: [embed],
@@ -363,7 +383,7 @@ function displayVideo(
   firstEmbed
 ) {
   return new Promise((resolve) => {
-    firstEmbed.setDescription(`Media approved and successfully processed.`);
+    firstEmbed.setDescription(APPROVE_MESSAGE_USER);
     firstEmbed.setColor(0x00ff00);
     interaction.editReply({
       embeds: [firstEmbed],
@@ -372,7 +392,7 @@ function displayVideo(
     setTimeout(() => {
       try {
         if (embed) {
-          embed.setDescription(`Media approved and successfully processed.`);
+          embed.setDescription(APPROVE_MESSAGE_USER);
           embed.setColor(0x00ff00);
           i.message.edit({
             embeds: [embed],

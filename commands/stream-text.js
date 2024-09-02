@@ -11,23 +11,32 @@ const fs = require("fs");
 const { v4: uuidv4 } = require("uuid");
 const adminCheck = require("../features/adminCheck");
 
-const ID_FILE_PATH = path.join(__dirname, "../latest_id.txt");
+const {
+  QUEUE_MESSAGE,
+  APPROVE_MESSAGE_VALIDATION,
+  APPROVE_MESSAGE,
+  APPROVE_MESSAGE_USER,
+  REJECT_MESSAGE,
+  REJECT_MESSAGE_USER,
+  VALIDATION_TIMED_OUT,
+  STREAM_TEXT_DESCRIPTION,
+  STREAM_TEXT_TEXT,
+  STREAM_TEXT_DURATION,
+} = require("../config.json");
+
 const CHANNEL_ID = "1279736846045151293";
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("stream-text")
-    .setDescription("Send text to display on Streamlabs with a duration")
+    .setDescription(STREAM_TEXT_DESCRIPTION)
     .addStringOption((option) =>
-      option
-        .setName("text")
-        .setDescription("The text to display")
-        .setRequired(true)
+      option.setName("text").setDescription(STREAM_TEXT_TEXT).setRequired(true)
     )
     .addIntegerOption((option) =>
       option
         .setName("duration")
-        .setDescription("Duration to display the text (seconds)")
+        .setDescription(STREAM_TEXT_DURATION)
         .addChoices(
           { name: "5 seconds", value: 5 },
           { name: "10 seconds", value: 10 },
@@ -39,17 +48,11 @@ module.exports = {
   async execute(client, interaction) {
     await interaction.deferReply();
     const uniqueId = uuidv4();
-
-    const ID_FILE_PATH = path.join(
-      __dirname,
-      "../public/assets/idfiles/latest_id_" + uniqueId + ".txt"
-    );
-
-    processQueue(client, interaction, ID_FILE_PATH, uniqueId);
+    processQueue(client, interaction, uniqueId);
   },
 };
 
-async function processQueue(client, interaction, ID_FILE_PATH, uniqueId) {
+async function processQueue(client, interaction, uniqueId) {
   try {
     const text = interaction.options.getString("text");
     let duration = interaction.options.getInteger("duration") || 5;
@@ -58,9 +61,7 @@ async function processQueue(client, interaction, ID_FILE_PATH, uniqueId) {
       const firstEmbed = new EmbedBuilder()
         .setColor("#ff8000")
         .setTitle("Paname Boss")
-        .setDescription(
-          "Your text has been placed in the queue. Please wait while it is being processed."
-        )
+        .setDescription(QUEUE_MESSAGE)
         .addFields({ name: "Text", value: text })
         .addFields({ name: "Duration", value: `${duration} seconds` });
       await interaction.editReply({
@@ -92,14 +93,14 @@ async function processQueue(client, interaction, ID_FILE_PATH, uniqueId) {
           console.error("Error sending ID to the API:", error);
         }
         const embed = new EmbedBuilder()
-          .setDescription(`Text approved! It will now be processed.`)
-          .setColor("#ff8000");
+          .setDescription(APPROVE_MESSAGE)
+          .setColor(0x00ff00);
 
         await displayText(text, duration, interaction, null, embed, firstEmbed);
       } else {
         const embed = new EmbedBuilder()
           .setTitle("Text Validation")
-          .setDescription(`Please approve or reject the text to be displayed.`)
+          .setDescription(APPROVE_MESSAGE_VALIDATION)
           .setColor(0xff0000)
           .addFields({ name: "Text", value: text })
           .addFields({ name: "Duration", value: `${duration} seconds` });
@@ -133,7 +134,7 @@ async function processQueue(client, interaction, ID_FILE_PATH, uniqueId) {
         const collector = message.createMessageComponentCollector({
           componentType: ComponentType.Button,
           filter,
-          time: 30000,
+          time: 60000,
         });
 
         collector.on("collect", async (i) => {
@@ -165,8 +166,8 @@ async function processQueue(client, interaction, ID_FILE_PATH, uniqueId) {
               } catch (error) {
                 console.error("Error sending ID to the API:", error);
               }
-              embed.setDescription(`Text approved! It will now be processed.`);
-              embed.setColor("#ff8000");
+              embed.setDescription(APPROVE_MESSAGE);
+              embed.setColor(0x00ff00);
               await i.update({
                 embeds: [embed],
                 components: [],
@@ -181,12 +182,12 @@ async function processQueue(client, interaction, ID_FILE_PATH, uniqueId) {
                 firstEmbed
               );
             } else if (i.customId === `reject_text_${uniqueId}`) {
-              embed.setDescription(`Text rejected and will not be processed.`);
+              embed.setDescription(REJECT_MESSAGE);
               await i.update({
                 embeds: [embed],
                 components: [],
               });
-              firstEmbed.setDescription(`Text rejected.`);
+              firstEmbed.setDescription(REJECT_MESSAGE_USER);
               firstEmbed.setColor(0xff0000);
               interaction.editReply({
                 embeds: [firstEmbed],
@@ -204,13 +205,15 @@ async function processQueue(client, interaction, ID_FILE_PATH, uniqueId) {
 
         collector.on("end", async (collected, reason) => {
           if (reason === "time") {
-            firstEmbed.setDescription(`Validation timed out.`);
             firstEmbed.setColor(0xff0000);
+            firstEmbed.setDescription(VALIDATION_TIMED_OUT);
             interaction.editReply({
               embeds: [firstEmbed],
             });
-            await interaction.editReply({
-              content: "Validation timed out.",
+            embed.setDescription(VALIDATION_TIMED_OUT);
+            embed.setColor(0xff0000);
+            await message.edit({
+              embeds: [embed],
               components: [],
             });
           }
@@ -239,8 +242,7 @@ function displayText(text, duration, interaction, i, embed, firstEmbed) {
       duration: duration,
     };
 
-    fs.writeFileSync(ID_FILE_PATH, JSON.stringify(data));
-    firstEmbed.setDescription(`text approved and successfully processed.`);
+    firstEmbed.setDescription(APPROVE_MESSAGE_USER);
     firstEmbed.setColor(0x00ff00);
     interaction.editReply({
       embeds: [firstEmbed],
@@ -249,7 +251,7 @@ function displayText(text, duration, interaction, i, embed, firstEmbed) {
     setTimeout(() => {
       try {
         embed.setColor(0x00ff00);
-        embed.setDescription(`Text approved and successfully processed.`);
+        embed.setDescription(APPROVE_MESSAGE_USER);
 
         if (i && i.message) {
           i.message.edit({

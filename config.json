@@ -1,4 +1,25 @@
 {
-    "clientId": "1279021532298874973",
-	"guildId": "697320717821411348"
+  "clientId": "1279021532298874973",
+  "guildId": "697320717821411348",
+
+  "STREAM_MEDIA_DESCRIPTION": "Send media to display on Streamlabs with a duration",
+  "STREAM_MEDIA_DESCRIPTION_MEDIA": "The media to display",
+  "STREAM_MEDIA_DESCRIPTION_DURATION": "Duration to display the media (seconds)",
+
+  "STREAM_TEXT_DESCRIPTION": "Send text to display on Streamlabs with a duration",
+  "STREAM_TEXT_TEXT": "The text to display",
+  "STREAM_TEXT_DURATION": "Duration to display the text (seconds)",
+
+  "STREAM_MEDIATEXT_DESCRIPTION": "Send text and media to display on Streamlabs with a duration",
+  "STREAM_MEDIATEXT_MEDIA": "The media to display",
+  "STREAM_MEDIATEXT_TEXT": "The text to display",
+  "STREAM_MEDIATEXT_DURATION": "Duration to display the media and text (seconds)",
+
+  "QUEUE_MESSAGE": "Your media has been placed in the queue.",
+  "APPROVE_MESSAGE_VALIDATION": "Please approve or reject the media to be displayed for:",
+  "APPROVE_MESSAGE": "Media approved! It will now be processed.",
+  "APPROVE_MESSAGE_USER": "Media approved and successfully processed.",
+  "REJECT_MESSAGE": "Media rejected and not processed.",
+  "REJECT_MESSAGE_USER": "Your media has been rejected and not processed.",
+  "VALIDATION_TIMED_OUT": "Validation timed out."
 }
