@@ -38,27 +38,27 @@ This bot simplifies the management of your overlays and enhances the interactivi
 ## 📑Demo
 
 - /stream-text
-<img src="./public/assets/gifs/text1.gif"/>
+<img src="./public/assets/gifs/text1-min.gif"/>
 <hr/>
 
 - /stream-media | Image
-<img src="./public/assets/gifs/media1.gif"/>
+<img src="./public/assets/gifs/media1-min.gif"/>
 <hr/>
 
 - /stream-media | Video
-<img src="./public/assets/gifs/media_video.gif"/>
+<img src="./public/assets/gifs/media_video-min.gif"/>
 <hr/>
 
 - /stream-mediatext | Image & text
-<img src="./public/assets/gifs/mediatext1.gif"/>
+<img src="./public/assets/gifs/mediatext1-min.gif"/>
 <hr/>
 
 - /stream-mediatext | Video & text
-<img src="./public/assets/gifs/mediatext video1.gif"/>
+<img src="./public/assets/gifs/mediatext video1-min.gif"/>
 <hr/>
 
 - Media verif system
-<img src="./public/assets/gifs/verif1.gif"/>
+<img src="./public/assets/gifs/verif1-min.gif"/>
 <hr/>
   
 ## ⚙️Installation
