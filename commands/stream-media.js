@@ -25,11 +25,13 @@ const {
   STREAM_MEDIA_DESCRIPTION,
   STREAM_MEDIA_DESCRIPTION_MEDIA,
   STREAM_MEDIA_DESCRIPTION_DURATION,
+  verificationChannelID1,
+  verificationChannelID2,
 } = require("../config.json");
 
 ffmpeg.setFfmpegPath(path.join(__dirname, "../ffmpeg/bin/ffmpeg.exe"));
 
-const CHANNEL_ID = "1280128849534783570";
+const CHANNEL_ID = verificationChannelID1;
 
 module.exports = {
   data: new SlashCommandBuilder()

@@ -28,8 +28,10 @@ const {
   STREAM_MEDIATEXT_MEDIA,
   STREAM_MEDIATEXT_TEXT,
   STREAM_MEDIATEXT_DURATION,
+  verificationChannelID1,
+  verificationChannelID2,
 } = require("../config.json");
-const CHANNEL_ID = "1280128849534783570";
+const CHANNEL_ID = verificationChannelID1;
 
 module.exports = {
   data: new SlashCommandBuilder()
