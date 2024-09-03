@@ -15,9 +15,9 @@ const { v4: uuidv4 } = require("uuid");
 const adminCheck = require("../features/adminCheck");
 const embedsAndButtons = require("../features/embedsAndButtons");
 
-ffmpeg.setFfmpegPath(path.join(__dirname, "../ffmpeg/bin/ffmpeg.exe"));
 
 const {
+  FFMEPG_PATH,
   QUEUE_MESSAGE,
   APPROVE_MESSAGE_VALIDATION,
   APPROVE_MESSAGE,
@@ -34,11 +34,12 @@ const {
   verificationChannelID2,
 } = require("../config.json");
 const CHANNEL_ID = verificationChannelID1;
+ffmpeg.setFfmpegPath(FFMEPG_PATH);
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("stream-mediatext")
-    .setDescription(STREAM_MEDIATEXT_DESCRIPTION)
+  .setName("stream-mediatext")
+  .setDescription(STREAM_MEDIATEXT_DESCRIPTION)
     .addAttachmentOption((option) =>
       option
         .setName("media")

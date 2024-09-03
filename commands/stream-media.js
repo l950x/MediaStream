@@ -16,6 +16,7 @@ const adminCheck = require("../features/adminCheck");
 const embedsAndButtons = require("../features/embedsAndButtons");
 
 const {
+  FFMEPG_PATH,
   QUEUE_MESSAGE,
   APPROVE_MESSAGE_VALIDATION,
   APPROVE_MESSAGE,
@@ -30,8 +31,7 @@ const {
   verificationChannelID1,
   verificationChannelID2,
 } = require("../config.json");
-ffmpeg.setFfmpegPath(path.join(__dirname, "../ffmpeg/bin/ffmpeg.exe"));
-
+ffmpeg.setFfmpegPath(FFMEPG_PATH);
 const CHANNEL_ID = verificationChannelID1;
 
 module.exports = {

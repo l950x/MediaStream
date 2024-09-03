@@ -1,4 +1,5 @@
 {
+  "FFMEPG_PATH": "C:\\xampp\\htdocs\\stream-man\\ffmpeg\\bin\\ffmpeg.exe",
   "BOT_NAME": "Paname Boss",
   "clientId": "1279021532298874973",
   "guildId": "697320717821411348",
