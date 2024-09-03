@@ -24,6 +24,9 @@
 
 ## 📑Overview
 
+<img src="./public/assets/gifs/cmd.gif"/>
+<hr/>
+
 Stream-Man is a Discord bot designed to display multimedia content (text, images, videos) directly on a Streamlabs scene. Developed specifically for a client, it allows you to control your stream in real-time simply by interacting through Discord.
 
 With Stream-Man, you can:
@@ -59,6 +62,10 @@ This bot simplifies the management of your overlays and enhances the interactivi
 
 - Media verif system
 <img src="./public/assets/gifs/verif1-min.gif"/>
+<hr/>
+
+- Log system
+<img src="./public/assets/gifs/log.gif"/>
 <hr/>
   
 ## ⚙️Installation

@@ -11,6 +11,7 @@ module.exports = {
 
   async execute(client, interaction) {
     await interaction.deferReply();
+    log(`[+] Attempted to stop medias stream by ${interaction.user.username}.`,'green');
     if (!(await adminCheck(interaction.member.id))) {
       log(
         `[!] Unauthorized command attempt by ${interaction.user.username}.`,
