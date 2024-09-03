@@ -1,7 +1,6 @@
 const padRight = require("./padRight");
 const txtLog = require("./txtLog");
-const chalk = import("chalk");
-
+const chalk = require("chalk");
 async function log(message, color) {
     console.log(
         chalk[color](padRight(message, 9))

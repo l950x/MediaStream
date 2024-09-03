@@ -2,14 +2,21 @@ const { SlashCommandBuilder } = require("discord.js");
 const path = require("path");
 const fs = require("fs");
 const adminCheck = require("../features/adminCheck");
-
+const log = require("../features/log");
+const txtLog = require("../features/txtLog");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("stream-stop")
-    .setDescription("stop the current stream media"),
+    .setDescription("Stop the current stream media"),
+
   async execute(client, interaction) {
-    if (!await adminCheck(interaction.member.id)) {
-      return await interaction.reply(
+    await interaction.deferReply();
+    if (!(await adminCheck(interaction.member.id))) {
+      log(
+        `[!] Unauthorized command attempt by ${interaction.user.username}.`,
+        "yellow"
+      );
+      return await interaction.editReply(
         "You do not have permission to use this command."
       );
     }
@@ -18,25 +25,37 @@ module.exports = {
     const MEDIA_FILE_PATH = path.join(__dirname, "../public/assets/uploads/");
 
     if (!fs.existsSync(ID_FILE_PATH)) {
-      return await interaction.reply("No ID found.");
+      log("[!] No ID files found when attempting to stop stream.", "yellow");
+      return await interaction.editReply("No ID found.");
     }
 
     try {
-      const files = fs.readdirSync(ID_FILE_PATH);
-      for (const file of files) {
+      const idFiles = fs.readdirSync(ID_FILE_PATH);
+      for (const file of idFiles) {
         const filePath = path.join(ID_FILE_PATH, file);
         fs.unlinkSync(filePath);
+        log(`[+] Deleted ID file: ${file}`, "green");
       }
+
       if (fs.existsSync(MEDIA_FILE_PATH)) {
-        const files = fs.readdirSync(MEDIA_FILE_PATH);
-        for (const file of files) {
+        const mediaFiles = fs.readdirSync(MEDIA_FILE_PATH);
+        for (const file of mediaFiles) {
           const filePath = path.join(MEDIA_FILE_PATH, file);
           fs.unlinkSync(filePath);
+          log(`[+] Deleted media file: ${file}`, "green");
         }
       }
-      await interaction.reply("The latest ID has been deleted.");
+
+      await interaction.editReply(
+        "The latest ID and media files have been deleted."
+      );
+      log(
+        `[+] Stream medias stopped successfully by ${interaction.user.username}.`,
+        "blue"
+      );
     } catch (error) {
-      await interaction.reply("Error: " + error);
+      txtLog("Error stopping stream: " + error);
+      await interaction.editReply("Error: " + error);
     }
   },
 };

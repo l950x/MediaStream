@@ -55,7 +55,36 @@ LoadCommands()
       second: "2-digit",
     });
     client.on("ready", () => {
-      client.user.setActivity("/help");
+      setTimeout(() => {
+        figlet.text(
+          `READY -> ${dateTime}`,
+          {
+            font: "mini",
+          },
+          function (err, data) {
+            if (err) {
+              console.log("Something went wrong...");
+              console.dir(err);
+              return;
+            }
+
+            padToCenter(data.split("\n"), process.stdout.columns).then(
+              (centeredText) => {
+                console.log(chalk.green(centeredText));
+              }
+            );
+            padToCenter(
+              "[+] ---------------------------------------------------------------------------------------------- [+]".split(
+                "\n"
+              ),
+              process.stdout.columns
+            ).then((centeredHr) => {
+              console.log(chalk.gray(centeredHr + "\n\n"));
+            });
+          }
+        );
+        client.user.setActivity("/help");
+      }, 1000);
     });
 
     client.login(token);

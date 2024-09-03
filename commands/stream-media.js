@@ -13,6 +13,7 @@ const fetch = require("node-fetch");
 const ffmpeg = require("fluent-ffmpeg");
 const { v4: uuidv4 } = require("uuid");
 const adminCheck = require("../features/adminCheck");
+const log = require("../features/log");
 const embedsAndButtons = require("../features/embedsAndButtons");
 
 const {
@@ -31,6 +32,7 @@ const {
   verificationChannelID1,
   verificationChannelID2,
 } = require("../config.json");
+const txtLog = require("../features/txtLog");
 ffmpeg.setFfmpegPath(FFMEPG_PATH);
 const CHANNEL_ID = verificationChannelID1;
 
@@ -60,6 +62,10 @@ module.exports = {
   async execute(client, interaction) {
     await interaction.deferReply();
     const uniqueId = uuidv4();
+    log(
+      `[+] Media queued by ${interaction.user.username}: ${uniqueId}`,
+      "green"
+    );
     processQueue(client, interaction, uniqueId);
   },
 };
@@ -67,10 +73,10 @@ module.exports = {
 async function processQueue(client, interaction, uniqueId) {
   try {
     const media = interaction.options.getAttachment("media");
-    let duration = interaction.options.getInteger("duration") || 5;
+    let duration = interaction.options.getInteger("duration");
 
     if (media) {
-      const fileExtension = path.extname(media.url).split("?")[0];
+      const fileExtension = path.extname(media.url).split("?")[0].toLowerCase();
       if (![".png", ".jpg", ".jpeg", ".gif", ".mp4"].includes(fileExtension)) {
         await interaction.editReply({
           content: "Invalid file type. Please upload an image, video, or GIF.",
@@ -84,25 +90,46 @@ async function processQueue(client, interaction, uniqueId) {
         `latest_media_${uniqueId}${fileExtension}`
       );
 
-      const response = await fetch(media.url);
-      const buffer = await response.buffer();
-      fs.writeFileSync(filePath, buffer);
+      try {
+        const response = await fetch(media.url);
+        if (!response.ok) throw new Error("Failed to fetch media.");
+        const buffer = await response.buffer();
+        fs.writeFileSync(filePath, buffer);
+        log(`[+] Media downloaded successfully: ${filePath}`, "green");
+      } catch (error) {
+        txtLog(error);
+        await interaction.editReply({
+          content: "Failed to download the media. Please try again.",
+          ephemeral: true,
+        });
+        return;
+      }
+
       let type = "";
       let videoLink = "";
-
       if (fileExtension === ".mp4") {
         type = "video";
-        videoLink = "latest_media_" + uniqueId + ".mp4";
-        await new Promise((resolve, reject) => {
-          ffmpeg.ffprobe(filePath, (err, metadata) => {
-            if (err) {
-              reject(err);
-            } else {
-              duration = metadata.format.duration;
-              resolve();
-            }
+        videoLink = `latest_media_${uniqueId}.mp4`;
+        try {
+          await new Promise((resolve, reject) => {
+            ffmpeg.ffprobe(filePath, (err, metadata) => {
+              if (err) {
+                reject(err);
+              } else {
+                duration = duration || metadata.format.duration;
+                resolve();
+              }
+            });
           });
-        });
+          log(`[+] Video metadata retrieved for ${filePath}`, "green");
+        } catch (error) {
+          txtLog(error);
+          await interaction.editReply({
+            content: "Failed to process the video. Please try again.",
+            ephemeral: true,
+          });
+          return;
+        }
       } else if (fileExtension === ".gif") {
         type = "gif";
         duration = duration || 5;
@@ -123,6 +150,10 @@ async function processQueue(client, interaction, uniqueId) {
       });
 
       if (await adminCheck(interaction.member.id)) {
+        log(
+          `[+] Admin detected: ${interaction.user.username}. Media approved automatically.`,
+          "blue"
+        );
         if (type === "video") {
           await displayVideo(
             interaction,
@@ -147,6 +178,10 @@ async function processQueue(client, interaction, uniqueId) {
           );
         }
       } else {
+        log(
+          `[+] Non-admin user: ${interaction.user.username}. Awaiting approval.`,
+          "yellow"
+        );
         const { embed, approveButton, rejectButton } = await embedsAndButtons({
           uniqueId,
           text: null,
@@ -193,6 +228,10 @@ async function processQueue(client, interaction, uniqueId) {
 
         collector.on("collect", async (i) => {
           if (i.customId === `approve_text_${uniqueId}`) {
+            log(
+              `[+] Media approved by ${i.user.username}: ${uniqueId}`,
+              "green"
+            );
             embed.setDescription(APPROVE_MESSAGE);
             embed.setColor(0xff8000);
 
@@ -226,6 +265,7 @@ async function processQueue(client, interaction, uniqueId) {
               );
             }
           } else if (i.customId === `reject_text_${uniqueId}`) {
+            log(`[+] Media rejected by ${i.user.username}: ${uniqueId}`, "red");
             embed.setDescription(REJECT_MESSAGE);
             await i.update({
               embeds: [embed],
@@ -247,10 +287,11 @@ async function processQueue(client, interaction, uniqueId) {
             try {
               await video.delete();
             } catch (error) {
-              console.error("Error deleting video:", error);
+              txtLog(error);
             }
           }
           if (reason === "time") {
+            log(`[!] Validation timed out for media: ${uniqueId}`, "yellow");
             firstEmbed.setDescription(VALIDATION_TIMED_OUT);
             firstEmbed.setColor(0xff0000);
             interaction.editReply({
@@ -272,7 +313,7 @@ async function processQueue(client, interaction, uniqueId) {
       });
     }
   } catch (error) {
-    console.error("Error processing interaction:", error);
+    txtLog(error);
     await interaction.editReply({
       content: "There was an error processing the media. Please try again.",
       ephemeral: true,
@@ -306,12 +347,12 @@ async function displayImage(
     });
 
     if (response.ok) {
-      console.log("ID successfully sent to the API");
+      log("[+] ID successfully sent to the API", "green");
     } else {
-      console.error("Failed to send ID to the API");
+      txtLog("Failed to send ID to the API");
     }
   } catch (error) {
-    console.error("Error sending ID to the API:", error);
+    txtLog("Error sending ID to the API:" + error);
   }
 
   firstEmbed.setDescription(APPROVE_MESSAGE_USER);
@@ -330,7 +371,7 @@ async function displayImage(
         });
       }
     } catch (error) {
-      console.error("Error deleting the image:", error);
+      txtLog("Error deleting the image:" + error);
     }
   }, duration * 1000);
 }
@@ -362,12 +403,12 @@ async function displayVideo(
     });
 
     if (response.ok) {
-      console.log("ID successfully sent to the API");
+      log("[+] ID successfully sent to the API", "green");
     } else {
-      console.error("Failed to send ID to the API");
+      txtLog("Failed to send ID to the API");
     }
   } catch (error) {
-    console.error("Error sending ID to the API:", error);
+    txtLog("Error sending ID to the API:" + error);
   }
   firstEmbed.setDescription(APPROVE_MESSAGE_USER);
   firstEmbed.setColor(0x00ff00);
@@ -385,7 +426,7 @@ async function displayVideo(
         });
       }
     } catch (error) {
-      console.error("Error deleting the video:", error);
+      txtLog("Error deleting the video:" + error);
     }
   }, duration * 1000);
 }

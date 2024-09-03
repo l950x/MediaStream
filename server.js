@@ -6,6 +6,7 @@ const fs = require("fs");
 
 const app = express();
 const port = 3000;
+const log = require("./features/log");
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -45,11 +46,12 @@ app.get("/api/test", (req, res) => {
       );
       const data = JSON.parse(fileContent);
       res.status(200).json(data);
+      log("[+] Fetched latest media data successfully", "green");
     } else {
       res.status(404).json({ error: "No media file found." });
     }
   } catch (error) {
-    console.error("Error fetching the media data:", error);
+    txtLog(error);
     res.status(500).json({ error: "Error fetching the media data." });
   }
 });
@@ -57,44 +59,45 @@ app.get("/api/test", (req, res) => {
 app.post("/api/update-id", (req, res) => {
   try {
     const data = req.body;
-    console.log(data);
 
     if (data && data.id) {
       const ID_FILE_PATH = path.join(ID_FILES_DIR, `latest_id_${data.id}.txt`);
 
       fs.writeFileSync(ID_FILE_PATH, JSON.stringify(data));
       res.status(200).json({ success: true });
+      log(`[+] Updated ID file: ${ID_FILE_PATH}`, "green");
     } else {
       res.status(400).json({ error: "Invalid ID data." });
+      log("[!] Invalid ID data received.", "yellow");
     }
   } catch (error) {
-    console.error("Error updating the ID:", error);
+    txtLog(error);
     res.status(500).json({ error: "Error updating the ID." });
   }
 });
 
 app.delete("/api/delete-file", (req, res) => {
-  console.log("File deletion request received:", req.query.name);
   const fileName = req.query.name;
+  log(`[/] File deletion request received: ${fileName}`, "green");
+  
   const filePath = path.join(__dirname, "./public/assets/idfiles", fileName);
 
   fs.unlink(filePath, (err) => {
     if (err) {
-      // console.log(err);
+      txtLog(err);
       return res.status(500).json({
         success: false,
         message: "Erreur lors de la suppression du fichier.",
         error: err,
       });
     }
-    console.log("File deleted successfully");
-    res
-      .status(200)
-
-      .json({ success: true, message: "Fichier supprimé avec succès." });
+    log(`[+] File deleted successfully: ${fileName}`, "green");
+    res.status(200).json({ success: true, message: "Fichier supprimé avec succès." });
   });
 });
 
 app.listen(port, () => {
-  // console.log(`Serveur lancé sur http://localhost:${port}`);
+  setTimeout(() => {
+    log(`[^] Server started at http://localhost:${port}`, "magenta");
+  }, 3000);
 });

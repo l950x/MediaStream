@@ -14,6 +14,9 @@ const fs = require("fs");
 const { v4: uuidv4 } = require("uuid");
 const adminCheck = require("../features/adminCheck");
 
+const log = require("../features/log");
+const txtLog = require("../features/txtLog");
+
 const {
   QUEUE_MESSAGE,
   APPROVE_MESSAGE_VALIDATION,
@@ -73,8 +76,16 @@ async function processQueue(client, interaction, uniqueId) {
       await interaction.editReply({
         embeds: [firstEmbed],
       });
+      log(
+        `[+] Text message queued by ${interaction.user.username}: ${uniqueId}`,
+        "green"
+      );
 
       if (await adminCheck(interaction.member.id)) {
+        log(
+          `[+] User is an admin. Text will be processed directly: ${interaction.user.username}`,
+          "blue"
+        );
         await displayText(
           text,
           duration,
@@ -85,6 +96,10 @@ async function processQueue(client, interaction, uniqueId) {
           uniqueId
         );
       } else {
+        log(
+          `[+] User is not an admin. Text will be sent for approval: ${interaction.user.username}`,
+          "yellow"
+        );
         const { embed, approveButton, rejectButton } = await embedsAndButtons({
           uniqueId,
           text,
@@ -96,6 +111,9 @@ async function processQueue(client, interaction, uniqueId) {
             content: "Failed to create the embed or buttons. Please try again.",
             ephemeral: true,
           });
+          txtLog(
+            "Failed to create embed or buttons during text approval process."
+          );
           return;
         }
 
@@ -122,7 +140,10 @@ async function processQueue(client, interaction, uniqueId) {
         });
 
         collector.on("collect", async (i) => {
-          console.log("Interaction collected:", i.customId);
+          log(
+            `[+] Interaction collected: ${i.customId} by ${i.user.username}`,
+            "green"
+          );
 
           if (i.customId === `approve_text_${uniqueId}`) {
             embed.setDescription(APPROVE_MESSAGE);
@@ -142,6 +163,7 @@ async function processQueue(client, interaction, uniqueId) {
               uniqueId
             );
           } else if (i.customId === `reject_text_${uniqueId}`) {
+            log(`[+] Text rejected: ${uniqueId} by ${i.user.username}`, "red");
             embed.setDescription(REJECT_MESSAGE);
             await i.update({
               embeds: [embed],
@@ -159,6 +181,7 @@ async function processQueue(client, interaction, uniqueId) {
 
         collector.on("end", async (collected, reason) => {
           if (reason === "time") {
+            log(`[!] Validation timed out for text: ${uniqueId}`, "yellow");
             firstEmbed.setColor(0xff0000);
             firstEmbed.setDescription(VALIDATION_TIMED_OUT);
             interaction.editReply({
@@ -174,13 +197,17 @@ async function processQueue(client, interaction, uniqueId) {
         });
       }
     } else {
+      log(
+        `[!] No text provided by ${interaction.user.username}. Request aborted.`,
+        "yellow"
+      );
       await interaction.editReply({
         content: "Please provide text to send.",
         ephemeral: true,
       });
     }
   } catch (error) {
-    console.error("Error processing interaction:", error);
+    txtLog("Error processing interaction: " + error);
     await interaction.editReply({
       content: "There was an error processing the text. Please try again.",
       ephemeral: true,
@@ -213,12 +240,12 @@ async function displayText(
     });
 
     if (response.ok) {
-      console.log("ID successfully sent to the API");
+      log("[+] ID successfully sent to the API", "green");
     } else {
-      console.error("Failed to send ID to the API");
+      txtLog("Failed to send ID to the API");
     }
   } catch (error) {
-    console.error("Error sending ID to the API:", error);
+    txtLog("Error sending ID to the API:" + error);
   }
 
   firstEmbed.setDescription(APPROVE_MESSAGE_USER);
@@ -238,7 +265,7 @@ async function displayText(
         });
       }
     } catch (error) {
-      console.error("Error deleting the text:", error);
+      txtLog("Error deleting the text:" + error);
     }
   }, duration * 1000);
 }

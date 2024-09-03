@@ -58,7 +58,7 @@ module.exports = async (client) => {
         const word = "Stream man";
         let Operation = "";
         let index = 0;
-        const font = ["fraktur", "banner3-D"];
+        const font = ["banner3-D"];
         const randomFont = font[Math.floor(Math.random() * font.length)];
         const intervalId = setInterval(() => {
           if (index < word.length) {

@@ -15,6 +15,8 @@ const { v4: uuidv4 } = require("uuid");
 const adminCheck = require("../features/adminCheck");
 const embedsAndButtons = require("../features/embedsAndButtons");
 
+const log = require("../features/log");
+const txtLog = require("../features/txtLog");
 
 const {
   FFMEPG_PATH,
@@ -38,8 +40,8 @@ ffmpeg.setFfmpegPath(FFMEPG_PATH);
 
 module.exports = {
   data: new SlashCommandBuilder()
-  .setName("stream-mediatext")
-  .setDescription(STREAM_MEDIATEXT_DESCRIPTION)
+    .setName("stream-mediatext")
+    .setDescription(STREAM_MEDIATEXT_DESCRIPTION)
     .addAttachmentOption((option) =>
       option
         .setName("media")
@@ -127,18 +129,18 @@ async function processQueue(client, interaction, uniqueId) {
         videoLink = "latest_media_" + uniqueId + ".mp4";
 
         try {
-          duration = await new Promise((resolve, reject) => {
+          await new Promise((resolve, reject) => {
             ffmpeg.ffprobe(filePath, (err, metadata) => {
               if (err) {
-                console.error("ffprobe error:", err);
                 reject(err);
               } else {
-                resolve(metadata.format.duration);
+                duration = duration || metadata.format.duration;
+                resolve();
               }
             });
           });
         } catch (error) {
-          console.error("Error while fetching video duration:", error);
+          txtLog("Error while fetching video duration: " + error);
           await interaction.editReply({
             content:
               "An error occurred while processing the video. Please try again.",
@@ -168,7 +170,7 @@ async function processQueue(client, interaction, uniqueId) {
       });
 
       if (await adminCheck(interaction.member.id)) {
-        console.log("User is an admin. Processing media directly.");
+        log("[+] User is an admin. Processing media directly.", "blue");
         if (type === "image-video") {
           await displayVideo(
             filePath,
@@ -198,7 +200,7 @@ async function processQueue(client, interaction, uniqueId) {
           );
         }
       } else {
-        console.log("User is not an admin. Sending media for approval.");
+        log("[+] User is not an admin. Sending media for approval.", "yellow");
         const { embed, approveButton, rejectButton } = await embedsAndButtons({
           uniqueId,
           text,
@@ -264,6 +266,7 @@ async function processQueue(client, interaction, uniqueId) {
                 firstEmbed,
                 type
               );
+              log("[+] Media approved and processed as image-text.", "green");
             } else {
               await displayVideo(
                 filePath,
@@ -278,6 +281,7 @@ async function processQueue(client, interaction, uniqueId) {
                 videoLink,
                 fileExtension
               );
+              log("[+] Media approved and processed as image-video.", "green");
             }
           } else if (i.customId === `reject_text_${uniqueId}`) {
             await i.update({
@@ -293,6 +297,7 @@ async function processQueue(client, interaction, uniqueId) {
             embed.setColor(0xff0000);
             await message.edit({ embeds: [embed], components: [] });
             fs.unlinkSync(filePath);
+            log("[+] Media rejected by the user.", "red");
           }
           collector.stop();
         });
@@ -303,9 +308,10 @@ async function processQueue(client, interaction, uniqueId) {
               await video.delete();
             }
           } catch (error) {
-            console.error("Error deleting video:", error);
+            txtLog("Error deleting video: " + error);
           }
           if (reason === "time") {
+            log("[!] Validation timed out for media: " + uniqueId, "yellow");
             firstEmbed.setDescription(VALIDATION_TIMED_OUT);
             firstEmbed.setColor(0xff0000);
             interaction.editReply({
@@ -318,14 +324,14 @@ async function processQueue(client, interaction, uniqueId) {
         });
       }
     } else {
-      console.log("No media provided.");
+      log("[!] No media provided.", "yellow");
       await interaction.editReply({
         content: "Please provide media to send.",
         ephemeral: true,
       });
     }
   } catch (error) {
-    console.error("Error processing interaction:", error);
+    txtLog("Error processing interaction: " + error);
     const errorEmbed = new EmbedBuilder()
       .setColor("#ff0000")
       .setTitle("Error")
@@ -364,15 +370,14 @@ async function displayImage(
     });
 
     if (response.ok) {
-      console.log("ID successfully sent to the API");
+      log("[+] ID successfully sent to the API", "green");
     } else {
-      console.error("Failed to send ID to the API");
+      txtLog("Failed to send ID to the API");
     }
   } catch (error) {
-    console.error("Error sending ID to the API:", error);
+    txtLog("Error sending ID to the API:" + error);
   }
 
-  console.log("Displaying image:", filePath);
   firstEmbed.setDescription(APPROVE_MESSAGE_USER);
   firstEmbed.setColor(0x00ff00);
   interaction.editReply({
@@ -389,7 +394,7 @@ async function displayImage(
         });
       }
     } catch (error) {
-      console.error("Error deleting the image:", error);
+      txtLog("Error deleting the image:" + error);
     }
   }, duration * 1000);
 }
@@ -425,12 +430,12 @@ async function displayVideo(
     });
 
     if (response.ok) {
-      console.log("ID successfully sent to the API");
+      log("[+] ID successfully sent to the API", "green");
     } else {
-      console.error("Failed to send ID to the API");
+      txtLog("Failed to send ID to the API");
     }
   } catch (error) {
-    console.error("Error sending ID to the API:", error);
+    txtLog("Error sending ID to the API:" + error);
   }
   console.log("Displaying video:", filePath);
   firstEmbed.setDescription(APPROVE_MESSAGE_USER);
@@ -450,7 +455,7 @@ async function displayVideo(
         });
       }
     } catch (error) {
-      console.error("Error deleting the image:", error);
+      txtLog("Error deleting the video:" + error);
     }
   }, duration * 1000);
 }
