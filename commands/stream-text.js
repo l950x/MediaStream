@@ -6,6 +6,9 @@ const {
   ButtonStyle,
   ComponentType,
 } = require("discord.js");
+
+const embedsAndButtons = require("../features/embedsAndButtons");
+
 const path = require("path");
 const fs = require("fs");
 const { v4: uuidv4 } = require("uuid");
@@ -22,6 +25,7 @@ const {
   STREAM_TEXT_DESCRIPTION,
   STREAM_TEXT_TEXT,
   STREAM_TEXT_DURATION,
+  BOT_NAME,
   verificationChannelID1,
   verificationChannelID2,
 } = require("../config.json");
@@ -62,7 +66,7 @@ async function processQueue(client, interaction, uniqueId) {
     if (text) {
       const firstEmbed = new EmbedBuilder()
         .setColor("#ff8000")
-        .setTitle("Paname Boss")
+        .setTitle(BOT_NAME)
         .setDescription(QUEUE_MESSAGE)
         .addFields({ name: "Text", value: text })
         .addFields({ name: "Duration", value: `${duration} seconds` });
@@ -71,51 +75,29 @@ async function processQueue(client, interaction, uniqueId) {
       });
 
       if (await adminCheck(interaction.member.id)) {
-        try {
-          const data = {
-            id: uniqueId,
-            type: "text",
-            content: text,
-            duration: duration,
-          };
-          const response = await fetch("http://localhost:3000/api/update-id", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(data),
-          });
-
-          if (response.ok) {
-            console.log("ID successfully sent to the API");
-          } else {
-            console.error("Failed to send ID to the API");
-          }
-        } catch (error) {
-          console.error("Error sending ID to the API:", error);
-        }
-        const embed = new EmbedBuilder()
-          .setDescription(APPROVE_MESSAGE)
-          .setColor(0x00ff00);
-
-        await displayText(text, duration, interaction, null, embed, firstEmbed);
+        await displayText(
+          text,
+          duration,
+          interaction,
+          null,
+          null,
+          firstEmbed,
+          uniqueId
+        );
       } else {
-        const embed = new EmbedBuilder()
-          .setTitle("Text Validation")
-          .setDescription(APPROVE_MESSAGE_VALIDATION)
-          .setColor(0xff0000)
-          .addFields({ name: "Text", value: text })
-          .addFields({ name: "Duration", value: `${duration} seconds` });
+        const { embed, approveButton, rejectButton } = await embedsAndButtons({
+          uniqueId,
+          text,
+          duration,
+        });
 
-        const approveButton = new ButtonBuilder()
-          .setCustomId(`approve_text_${uniqueId}`)
-          .setLabel("Approve")
-          .setStyle(ButtonStyle.Success);
-
-        const rejectButton = new ButtonBuilder()
-          .setCustomId(`reject_text_${uniqueId}`)
-          .setLabel("Reject")
-          .setStyle(ButtonStyle.Danger);
+        if (!embed || !approveButton || !rejectButton) {
+          await interaction.editReply({
+            content: "Failed to create the embed or buttons. Please try again.",
+            ephemeral: true,
+          });
+          return;
+        }
 
         const row = new ActionRowBuilder().addComponents(
           approveButton,
@@ -140,69 +122,39 @@ async function processQueue(client, interaction, uniqueId) {
         });
 
         collector.on("collect", async (i) => {
-          if (i.user.id === interaction.user.id) {
-            if (i.customId === `approve_text_${uniqueId}`) {
-              try {
-                const data = {
-                  id: uniqueId,
-                  type: "text",
-                  content: text,
-                  duration: duration,
-                };
-                const response = await fetch(
-                  "http://localhost:3000/api/update-id",
-                  {
-                    method: "POST",
-                    headers: {
-                      "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify(data),
-                  }
-                );
+          console.log("Interaction collected:", i.customId);
 
-                if (response.ok) {
-                  console.log("ID successfully sent to the API");
-                } else {
-                  console.error("Failed to send ID to the API");
-                }
-              } catch (error) {
-                console.error("Error sending ID to the API:", error);
-              }
-              embed.setDescription(APPROVE_MESSAGE);
-              embed.setColor(0x00ff00);
-              await i.update({
-                embeds: [embed],
-                components: [],
-              });
+          if (i.customId === `approve_text_${uniqueId}`) {
+            embed.setDescription(APPROVE_MESSAGE);
+            embed.setColor(0xff8000);
+            await i.update({
+              embeds: [embed],
+              components: [],
+            });
 
-              await displayText(
-                text,
-                duration,
-                interaction,
-                i,
-                embed,
-                firstEmbed
-              );
-            } else if (i.customId === `reject_text_${uniqueId}`) {
-              embed.setDescription(REJECT_MESSAGE);
-              await i.update({
-                embeds: [embed],
-                components: [],
-              });
-              firstEmbed.setDescription(REJECT_MESSAGE_USER);
-              firstEmbed.setColor(0xff0000);
-              interaction.editReply({
-                embeds: [firstEmbed],
-              });
-            }
-
-            collector.stop();
-          } else {
-            await i.reply({
-              content: "These buttons aren't for you!",
-              ephemeral: true,
+            await displayText(
+              text,
+              duration,
+              interaction,
+              i,
+              embed,
+              firstEmbed,
+              uniqueId
+            );
+          } else if (i.customId === `reject_text_${uniqueId}`) {
+            embed.setDescription(REJECT_MESSAGE);
+            await i.update({
+              embeds: [embed],
+              components: [],
+            });
+            firstEmbed.setDescription(REJECT_MESSAGE_USER);
+            firstEmbed.setColor(0xff0000);
+            interaction.editReply({
+              embeds: [firstEmbed],
             });
           }
+
+          collector.stop();
         });
 
         collector.on("end", async (collected, reason) => {
@@ -236,36 +188,57 @@ async function processQueue(client, interaction, uniqueId) {
   }
 }
 
-function displayText(text, duration, interaction, i, embed, firstEmbed) {
-  return new Promise((resolve) => {
+async function displayText(
+  text,
+  duration,
+  interaction,
+  i,
+  embed,
+  firstEmbed,
+  uniqueId
+) {
+  try {
     const data = {
+      id: uniqueId,
       type: "text",
       content: text,
       duration: duration,
     };
-
-    firstEmbed.setDescription(APPROVE_MESSAGE_USER);
-    firstEmbed.setColor(0x00ff00);
-    interaction.editReply({
-      embeds: [firstEmbed],
+    const response = await fetch("http://localhost:3000/api/update-id", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
     });
 
-    setTimeout(() => {
-      try {
+    if (response.ok) {
+      console.log("ID successfully sent to the API");
+    } else {
+      console.error("Failed to send ID to the API");
+    }
+  } catch (error) {
+    console.error("Error sending ID to the API:", error);
+  }
+
+  firstEmbed.setDescription(APPROVE_MESSAGE_USER);
+  firstEmbed.setColor(0x00ff00);
+  interaction.editReply({
+    embeds: [firstEmbed],
+  });
+
+  setTimeout(() => {
+    try {
+      if (embed) {
         embed.setColor(0x00ff00);
         embed.setDescription(APPROVE_MESSAGE_USER);
-
-        if (i && i.message) {
-          i.message.edit({
-            embeds: [embed],
-            components: [],
-          });
-        }
-        resolve();
-      } catch (error) {
-        console.error("Error deleting the text:", error);
-        resolve();
+        i.message.edit({
+          embeds: [embed],
+          components: [],
+        });
       }
-    }, duration * 1000);
-  });
+    } catch (error) {
+      console.error("Error deleting the text:", error);
+    }
+  }, duration * 1000);
 }
