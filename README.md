@@ -95,10 +95,37 @@ This bot simplifies the management of your overlays and enhances the interactivi
   
 ## ⚙️Installation
 
+**1. Clone the Repository**
+- Download the project using the following command:
 ```bash
-[WIP]
+git clone "https://github.com/l950x/stream-man.git"
 ```
-    
+
+**2. Install Dependencies**
+- Navigate to the project directory and run:
+```bash
+npm install
+```
+
+**3. Configure the Bot Token**
+- Open the .env file and replace the existing token with your bot's token:
+```bash
+DISCORD_TOKEN=your-bot-token-here
+```
+
+**4. Update the config.js File**
+- Set the correct path for FFMPEG.
+- Update adminIDs with the IDs of users who do not need to verify their media.
+- Set verificationChannelID1 to the ID of the channel where verification requests will be sent.
+- Set clientId to your bot's ID.
+  
+You can also customize the bot's messages in the config.js file.
+
+**5. Run the Bot**
+- Start the bot with the following command:
+```bash
+node .\index.js
+```
 ## 📃License
 
 Released under the [GNU GPL v3](https://www.gnu.org/licenses/gpl-3.0.en.html)
