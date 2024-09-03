@@ -24,7 +24,9 @@
 
 ## 📑Overview
 
-<img src="./public/assets/gifs/cmd.gif"/>
+<p align="center">
+  <img src="./public/assets/gifs/cmd.gif" width="700"/>
+</p>
 <hr/>
 
 Stream-Man is a Discord bot designed to display multimedia content (text, images, videos) directly on a Streamlabs scene. Developed specifically for a client, it allows you to control your stream in real-time simply by interacting through Discord.
@@ -39,33 +41,55 @@ With Stream-Man, you can:
 This bot simplifies the management of your overlays and enhances the interactivity of your streams by centralizing all commands within Discord.
 
 ## 📑Demo
-
-- /stream-text
-<img src="./public/assets/gifs/text1-min.gif"/>
+<div align="center"></div>
+<br/>
+<div align="center">/stream-text</div>
+<br/>
+<p align="center">
+<img src="./public/assets/gifs/text1-min.gif" width="700"/>
+</p>
 <hr/>
 
-- /stream-media | Image
-<img src="./public/assets/gifs/media1-min.gif"/>
+<div align="center">/stream-media | Image</div>
+<br/>
+<p align="center">
+<img src="./public/assets/gifs/media1-min.gif" width="700"/>
+</p>
 <hr/>
 
-- /stream-media | Video
-<img src="./public/assets/gifs/media_video-min.gif"/>
+<div align="center">/stream-media | Video</div>
+<br/>
+<p align="center">
+<img src="./public/assets/gifs/media_video-min.gif" width="700"/>
+</p>
 <hr/>
 
-- /stream-mediatext | Image & text
-<img src="./public/assets/gifs/mediatext1-min.gif"/>
+<div align="center">/stream-mediatext | Image & text</div>
+<br/>
+<p align="center">
+<img src="./public/assets/gifs/mediatext1-min.gif" width="700"/>
+</p>
 <hr/>
 
-- /stream-mediatext | Video & text
-<img src="./public/assets/gifs/mediatext video1-min.gif"/>
+
+<div align="center">/stream-mediatext | Video & text</div>
+<br/>
+<p align="center">
+<img src="./public/assets/gifs/mediatext video1-min.gif" width="700"/>
+</p>
 <hr/>
 
-- Media verif system
-<img src="./public/assets/gifs/verif1-min.gif"/>
+<div align="center">Media verif system</div>
+<br/>
+<p align="center">
+<img src="./public/assets/gifs/verif1-min.gif" width="700"/>
+</p>
 <hr/>
 
 - Log system
-<img src="./public/assets/gifs/log.gif"/>
+<p align="center">
+<img src="./public/assets/gifs/log.gif" width="700"/>
+</p>
 <hr/>
   
 ## ⚙️Installation
