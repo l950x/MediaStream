@@ -86,7 +86,8 @@ This bot simplifies the management of your overlays and enhances the interactivi
 </p>
 <hr/>
 
-- Log system
+<div align="center">Log system</div>
+<br/>
 <p align="center">
 <img src="./public/assets/gifs/log.gif" width="700"/>
 </p>
