@@ -108,6 +108,10 @@ app.post("/api/execute-audio", (req, res) => {
   exec(`${PYTHON_PATH} ${scriptPath}`, (error, stdout, stderr) => {
     if (error) {
       txtLog(error);
+      log(
+        `[!] Error executing Python script. Did you add the PYTHON_PATH in config.json ?`,
+        "red"
+      );
       return res.status(500).json({
         success: false,
         message: "Error executing the Python script.",
