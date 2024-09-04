@@ -3,10 +3,11 @@ const cors = require("cors");
 const bodyParser = require("body-parser");
 const path = require("path");
 const fs = require("fs");
-
+const { exec } = require("child_process");
 const app = express();
 const port = 3000;
 const log = require("./features/log");
+const txtLog = require("./features/txtLog");
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -14,7 +15,7 @@ app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, "public")));
 
 const ID_FILES_DIR = path.join(__dirname, "./public/assets/idfiles");
-
+const { PYTHON_PATH } = require("./config.json");
 function getLatestFile() {
   const files = fs.readdirSync(ID_FILES_DIR);
 
@@ -79,7 +80,7 @@ app.post("/api/update-id", (req, res) => {
 app.delete("/api/delete-file", (req, res) => {
   const fileName = req.query.name;
   log(`[/] File deletion request received: ${fileName}`, "green");
-  
+
   const filePath = path.join(__dirname, "./public/assets/idfiles", fileName);
 
   fs.unlink(filePath, (err) => {
@@ -92,7 +93,33 @@ app.delete("/api/delete-file", (req, res) => {
       });
     }
     log(`[+] File deleted successfully: ${fileName}`, "green");
-    res.status(200).json({ success: true, message: "Fichier supprimé avec succès." });
+    res
+      .status(200)
+      .json({ success: true, message: "Fichier supprimé avec succès." });
+  });
+});
+
+app.post("/api/execute-audio", (req, res) => {
+  const data = req.body;
+  const id = data.id;
+  log(`[+] Audio data received: ${data.id}`, "green");
+  const scriptPath = path.join(__dirname, "./py/sendAudio.py " + id);
+
+  exec(`${PYTHON_PATH} ${scriptPath}`, (error, stdout, stderr) => {
+    if (error) {
+      txtLog(error);
+      return res.status(500).json({
+        success: false,
+        message: "Error executing the Python script.",
+        error: stderr,
+      });
+    }
+    log("[+] Python script executed successfully.", "green");
+    res.status(200).json({
+      success: true,
+      message: "Python script executed successfully.",
+      output: stdout,
+    });
   });
 });
 

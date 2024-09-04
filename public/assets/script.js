@@ -50,13 +50,15 @@ function handleMediaDisplay(type, content, image, videoLink, durationInMs, id) {
       displayImageText(content, image, durationInMs, id);
       break;
     case "image-video":
-      displayImageVideo(content, videoLink, durationInMs, id);
+      displayVideoText(content, videoLink, durationInMs, id);
       break;
     case "gif":
       displayGif(image, durationInMs, id);
       break;
     case "gif-text":
       displayGifText(image, content, durationInMs, id);
+    case "audio":
+      displayAudio(id, durationInMs);
       break;
     default:
       console.error("Unknown media type.");
@@ -72,6 +74,9 @@ function displayText(content, durationInMs, id) {
   textElement.innerHTML = content;
 
   document.body.appendChild(textElement);
+  setTimeout(() => {
+    textElement.classList.add("float");
+  }, 400);
 
   setTimeout(() => {
     console.log("Timer finished, starting text animation.");
@@ -107,6 +112,10 @@ function displayImage(image, durationInMs, id) {
   imageElement.src = `../assets/uploads/${image}`;
 
   document.body.appendChild(imageElement);
+
+  setTimeout(() => {
+    imageElement.classList.add("float");
+  }, 400);
 
   setTimeout(() => {
     console.log("Timer finished, starting image animation.");
@@ -148,6 +157,9 @@ function displayVideo(content, durationInMs, id, videoLink) {
   videoElement.autoplay = true;
 
   document.body.appendChild(videoElement);
+  setTimeout(() => {
+    videoElement.classList.add("float");
+  }, 400);
 
   setTimeout(() => {
     console.log("Timer finished, starting video animation.");
@@ -193,6 +205,10 @@ function displayImageText(content, image, durationInMs, id) {
   mediaContainer.appendChild(imageElement);
   mediaContainer.appendChild(textElement);
   document.body.appendChild(mediaContainer);
+  setTimeout(() => {
+    imageElement.classList.add("float");
+    textElement.classList.add("float");
+  }, 400);
 
   textElement.style.marginTop = "40%";
 
@@ -227,7 +243,7 @@ function displayImageText(content, image, durationInMs, id) {
   }, durationInMs);
 }
 
-function displayImageVideo(content, videoLink, durationInMs, id) {
+function displayVideoText(content, videoLink, durationInMs, id) {
   console.log("Displaying image and video");
 
   const mediaContainer = document.createElement("div");
@@ -250,6 +266,10 @@ function displayImageVideo(content, videoLink, durationInMs, id) {
   mediaContainer.appendChild(videoElement);
   mediaContainer.appendChild(textElement);
   document.body.appendChild(mediaContainer);
+  setTimeout(() => {
+    videoElement.classList.add("float");
+    textElement.classList.add("float");
+  }, 400);
 
   textElement.style.marginTop = "40%";
 
@@ -292,6 +312,10 @@ function displayGif(image, durationInMs, id) {
   gifElement.src = `../assets/uploads/${image}`;
   mediaContainer.appendChild(gifElement);
   document.body.appendChild(mediaContainer);
+
+  setTimeout(() => {
+    gifElement.classList.add("float");
+  }, 400);
   setTimeout(() => {
     console.log("Timer finished, starting gif animation.");
     gifElement.classList.add("animstop");
@@ -336,6 +360,10 @@ function displayGifText(image, content, durationInMs, id) {
   mediaContainer.appendChild(textElement);
   document.body.appendChild(mediaContainer);
   setTimeout(() => {
+    gifElement.classList.add("float");
+    textElement.classList.add("float");
+  }, 400);
+  setTimeout(() => {
     console.log("Timer finished, starting gif and text animation.");
     gifElement.classList.add("animstop");
     textElement.classList.add("animstop");
@@ -370,4 +398,68 @@ function checkAndFetchMedia() {
   setTimeout(checkAndFetchMedia, 1000);
 }
 
+function displayAudio(id, durationInMs) {
+  const mediaContainer = document.createElement("div");
+  mediaContainer.id = "media-container";
+  document.body.appendChild(mediaContainer);
+  const textElement = document.createElement("p");
+  textElement.id = "text";
+  textElement.classList.add("anim");
+  textElement.style.marginTop = "40%";
+  textElement.innerHTML = "[AUDIO]";
+  mediaContainer.appendChild(textElement);
+
+  setTimeout(() => {
+    textElement.classList.add("float");
+  }, 400);
+
+  console.log("Displaying audio");
+
+  fetch("http://localhost:3000/api/execute-audio", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ id: id }),
+  })
+    .then((response) => {
+      if (response.ok) {
+        return response.json();
+      } else {
+        throw new Error("Failed to execute Python script");
+      }
+    })
+    .then((data) => {
+      console.log(data.message || "Python script executed successfully.");
+    })
+    .catch((error) => {
+      console.error("Error:", error.message);
+    });
+
+  setTimeout(() => {
+    console.log("Timer finished, starting gif and text animation.");
+    textElement.classList.add("animstop");
+    const animationDuration = 1000;
+    setTimeout(() => {
+      console.log("Removing gif and text elements from the DOM.");
+      mediaContainer.remove();
+      const fileName = `latest_id_${id}.txt`;
+      fetch(`http://localhost:3000/api/delete-file?name=${fileName}`, {
+        method: "DELETE",
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.success) {
+            console.log("File deleted successfully.");
+            mediaFetched = false;
+          } else {
+            console.log("Error deleting file.");
+          }
+        })
+        .catch((error) => {
+          console.error("Error:", error);
+        });
+    }, animationDuration);
+  }, durationInMs);
+}
 checkAndFetchMedia();
