@@ -133,6 +133,10 @@ async function processQueue(client, interaction, uniqueId) {
             ffmpeg.ffprobe(filePath, (err, metadata) => {
               if (err) {
                 reject(err);
+                log(
+                  `[!] Error processing video: ${err} | Dit you add the FFMEPG_PATH in config.json ?`,
+                  "red"
+                );
               } else {
                 duration = duration || metadata.format.duration;
                 resolve();
