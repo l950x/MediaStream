@@ -441,7 +441,6 @@ async function displayVideo(
   } catch (error) {
     txtLog("Error sending ID to the API:" + error);
   }
-  console.log("Displaying video:", filePath);
   firstEmbed.setDescription(APPROVE_MESSAGE_USER);
   firstEmbed.setColor(0x00ff00);
   interaction.editReply({

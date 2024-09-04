@@ -81,21 +81,48 @@ app.delete("/api/delete-file", (req, res) => {
   const fileName = req.query.name;
   log(`[/] File deletion request received: ${fileName}`, "green");
 
-  const filePath = path.join(__dirname, "./public/assets/idfiles", fileName);
+  const mediaPath = path.join(__dirname, "./public/assets/uploads", fileName);
+  const filePath = path.join(
+    __dirname,
+    "./public/assets/idfiles",
+    path.basename(fileName.replace("media", "id"), path.extname(fileName)) +
+      ".txt"
+  );
 
   fs.unlink(filePath, (err) => {
-    if (err) {
+    if (err && err.code !== "ENOENT") {
       txtLog(err);
       return res.status(500).json({
         success: false,
-        message: "Erreur lors de la suppression du fichier.",
+        message: "Error while deleting the .txt file.",
         error: err,
       });
     }
-    log(`[+] File deleted successfully: ${fileName}`, "green");
-    res
-      .status(200)
-      .json({ success: true, message: "Fichier supprimé avec succès." });
+
+    log(
+      `[+] .txt File deleted successfully or not found: ${filePath}`,
+      "green"
+    );
+
+    fs.unlink(mediaPath, (err) => {
+      if (err && err.code !== "ENOENT") {
+        txtLog(err);
+        return res.status(500).json({
+          success: false,
+          message: "Error while deleting the original file.",
+          error: err,
+        });
+      }
+
+      log(
+        `[+] Original file deleted successfully or not found: ${mediaPath}`,
+        "green"
+      );
+
+      res
+        .status(200)
+        .json({ success: true, message: "Files deleted successfully." });
+    });
   });
 });
 

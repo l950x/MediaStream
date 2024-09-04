@@ -125,8 +125,7 @@ function displayImage(image, durationInMs, id) {
     setTimeout(() => {
       console.log("Removing image element from the DOM.");
       imageElement.remove();
-      const fileName = `latest_id_${id}.txt`;
-      fetch(`http://localhost:3000/api/delete-file?name=${fileName}`, {
+      fetch(`http://localhost:3000/api/delete-file?name=${image}`, {
         method: "DELETE",
       })
         .then((response) => response.json())
@@ -169,8 +168,7 @@ function displayVideo(content, durationInMs, id, videoLink) {
     setTimeout(() => {
       console.log("Removing video element from the DOM.");
       videoElement.remove();
-      const fileName = `latest_id_${id}.txt`;
-      fetch(`http://localhost:3000/api/delete-file?name=${fileName}`, {
+      fetch(`http://localhost:3000/api/delete-file?name=${videoLink}`, {
         method: "DELETE",
       })
         .then((response) => response.json())
@@ -222,9 +220,8 @@ function displayImageText(content, image, durationInMs, id) {
     setTimeout(() => {
       console.log("Removing image and text elements from the DOM.");
       mediaContainer.remove();
-
-      const fileName = `latest_id_${id}.txt`;
-      fetch(`http://localhost:3000/api/delete-file?name=${fileName}`, {
+      console.log("image:", image);
+      fetch(`http://localhost:3000/api/delete-file?name=${image}`, {
         method: "DELETE",
       })
         .then((response) => response.json())
@@ -282,8 +279,7 @@ function displayVideoText(content, videoLink, durationInMs, id) {
     setTimeout(() => {
       console.log("Removing image and video elements from the DOM.");
       mediaContainer.remove();
-      const fileName = `latest_id_${id}.txt`;
-      fetch(`http://localhost:3000/api/delete-file?name=${fileName}`, {
+      fetch(`http://localhost:3000/api/delete-file?name=${videoLink}`, {
         method: "DELETE",
       })
         .then((response) => response.json())
@@ -323,8 +319,7 @@ function displayGif(image, durationInMs, id) {
     setTimeout(() => {
       console.log("Removing gif and text elements from the DOM.");
       mediaContainer.remove();
-      const fileName = `latest_id_${id}.txt`;
-      fetch(`http://localhost:3000/api/delete-file?name=${fileName}`, {
+      fetch(`http://localhost:3000/api/delete-file?name=${image}`, {
         method: "DELETE",
       })
         .then((response) => response.json())
@@ -371,8 +366,7 @@ function displayGifText(image, content, durationInMs, id) {
     setTimeout(() => {
       console.log("Removing gif and text elements from the DOM.");
       mediaContainer.remove();
-      const fileName = `latest_id_${id}.txt`;
-      fetch(`http://localhost:3000/api/delete-file?name=${fileName}`, {
+      fetch(`http://localhost:3000/api/delete-file?name=${image}`, {
         method: "DELETE",
       })
         .then((response) => response.json())
@@ -399,6 +393,7 @@ function checkAndFetchMedia() {
 }
 
 function displayAudio(id, durationInMs) {
+  console.log("Displaying audio");
   const mediaContainer = document.createElement("div");
   mediaContainer.id = "media-container";
   document.body.appendChild(mediaContainer);
@@ -412,8 +407,6 @@ function displayAudio(id, durationInMs) {
   setTimeout(() => {
     textElement.classList.add("float");
   }, 400);
-
-  console.log("Displaying audio");
 
   fetch("http://localhost:3000/api/execute-audio", {
     method: "POST",
@@ -443,10 +436,12 @@ function displayAudio(id, durationInMs) {
     setTimeout(() => {
       console.log("Removing gif and text elements from the DOM.");
       mediaContainer.remove();
-      const fileName = `latest_id_${id}.txt`;
-      fetch(`http://localhost:3000/api/delete-file?name=${fileName}`, {
-        method: "DELETE",
-      })
+      fetch(
+        `http://localhost:3000/api/delete-file?name=latest_media_${id}.mp3`,
+        {
+          method: "DELETE",
+        }
+      )
         .then((response) => response.json())
         .then((data) => {
           if (data.success) {
