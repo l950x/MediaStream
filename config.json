@@ -1,6 +1,6 @@
 {
-  "FFMEPG_PATH": "",
-  "PYTHON_PATH": "",
+  "FFMEPG_PATH": "C:\\Users\\gamix\\Desktop\\output\\ffmpeg\\bin\\ffmpeg.exe",
+  "PYTHON_PATH": "C:\\Users\\gamix\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
   "BOT_NAME": "Paname Boss",
   "clientId": "1279021532298874973",
   "guildId": "697320717821411348",
