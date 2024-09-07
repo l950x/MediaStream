@@ -21,7 +21,7 @@
 - /stream-media
 - /stream-mediatext
 - /stream-tts | **NEW**
-- /stream-tiktok **[CURRENTLY NOT WORKING]**
+- /stream-tiktok | **[CURRENTLY NOT WORKING]**
 
 
 ## 📑Overview
