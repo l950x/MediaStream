@@ -20,6 +20,8 @@
 - /stream-text
 - /stream-media
 - /stream-mediatext
+- /stream-tts | **NEW**
+- /stream-tiktok **[CURRENTLY NOT WORKING]**
 
 
 ## 📑Overview
@@ -29,13 +31,14 @@
 </p>
 <hr/>
 
-Stream-Man is a Discord bot designed to display multimedia content (text, images, videos) directly on a Streamlabs scene. Developed specifically for a client, it allows you to control your stream in real-time simply by interacting through Discord.
+Stream-Man is a Discord bot designed to display multimedia content (text, images, videos, audios) directly on a Streamlabs scene. Developed specifically for a client, it allows you to control your stream in real-time simply by interacting through Discord.
 
 With Stream-Man, you can:
 
 - **Display dynamic text:** Send messages that will instantly appear on your Streamlabs scene for your audience to see.
 - **Share images:** Upload images from Discord and have them appear on your scene for a set duration.
 - **Stream videos:** Play videos directly on your stream, choosing the duration they will be displayed.
+- **Play audios:** Play audio files during your stream with adjustable timing and duration.
 - **Preview media before streaming:** Verify images and videos before they are sent to your stream with an accept or reject button (optional).
   
 This bot simplifies the management of your overlays and enhances the interactivity of your streams by centralizing all commands within Discord.
