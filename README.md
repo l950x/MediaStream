@@ -1,5 +1,5 @@
 
-# Stream-Man [DiscordBot]
+# MediaStream [DiscordBot]
 
 
 
@@ -31,9 +31,9 @@
 </p>
 <hr/>
 
-Stream-Man is a Discord bot designed to display multimedia content (text, images, videos, audios) directly on a Streamlabs scene. Developed specifically for a client, it allows you to control your stream in real-time simply by interacting through Discord.
+MediaStream is a Discord bot designed to display multimedia content (text, images, videos, audios) directly on a Streamlabs scene. Developed specifically for a client, it allows you to control your stream in real-time simply by interacting through Discord.
 
-With Stream-Man, you can:
+With MediaStream, you can:
 
 - **Display dynamic text:** Send messages that will instantly appear on your Streamlabs scene for your audience to see.
 - **Share images:** Upload images from Discord and have them appear on your scene for a set duration.
@@ -48,7 +48,7 @@ This bot simplifies the management of your overlays and enhances the interactivi
 **1. Clone the Repository**
 - Download the project using the following command:
 ```bash
-git clone "https://github.com/l950x/stream-man.git"
+git clone "https://github.com/l950x/mediastream.git"
 ```
 
 **2. Install Dependencies**
