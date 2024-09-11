@@ -10,7 +10,7 @@
 [![MIT License](https://img.shields.io/badge/javascript-purple)](https://github.com/discordjs/discord.js)
 
 
-[Main Features](https://github.com/l950x/QPanel-discordbot-preview#mainfeatures) - [Overview](https://github.com/l950x/QPanel-discordbot-preview#overview) - [Installation](https://github.com/l950x/QPanel-discordbot-preview#installation) - [License](https://github.com/l950x/QPanel-discordbot-preview#license) - [Links](https://github.com/l950x/QPanel-discordbot-preview#links)
+[Main Features](https://github.com/l950x/mediastream#mainfeatures) - [Overview](https://github.com/l950x/mediastream#overview) - [Installation](https://github.com/l950x/mediastream#installation) - [License](https://github.com/l950x/mediastream#license) - [Links](https://github.com/l950x/mediastream#links)
 
 
 
