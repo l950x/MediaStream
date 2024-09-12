@@ -1,16 +1,12 @@
 {
-  "FFMEPG_PATH": "",
-  "PYTHON_PATH": "",
-  "BOT_NAME": "Paname Boss",
+  "FFMEPG_PATH": "YOUR_PATH_TO_FFMPEG",
+  "PYTHON_PATH": "YOUR_PATH_TO_PYTHON",
+  "BOT_NAME": "MediaStream",
   "clientId": "1279021532298874973",
-  "guildId": "697320717821411348",
   "verificationChannelID1": "1147116498079461466",
-  "verificationChannelID2": "1280128849534783570",
 
   "AdminID": [
-    "549279232283377703",
-    "1077639384339320925",
-    "893498147052077096"
+    "12790215516574973"
   ],
 
   "STREAM_MEDIA_DESCRIPTION": "Send media to display with a duration",

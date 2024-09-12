@@ -103,15 +103,21 @@ async function processQueue(client, interaction, uniqueId) {
     const text = interaction.options.getString("text");
 
     if (media) {
-      const fileExtension = path.extname(media.url).split("?")[0];
-      if (![".png", ".jpg", ".jpeg", ".gif", ".mp4"].includes(fileExtension)) {
+      let fileExtension = path.extname(media.url).split("?")[0];
+      if (
+        ![".png", ".jpg", ".jpeg", ".gif", ".mp4", ".mov"].includes(
+          fileExtension
+        )
+      ) {
         await interaction.editReply({
           content: "Invalid file type. Please upload an image, video, or GIF.",
           ephemeral: true,
         });
         return;
       }
-
+      if (fileExtension === ".mov") {
+        fileExtension = ".mp4";
+      }
       const filePath = path.join(
         __dirname,
         "../public/assets/uploads",
@@ -245,7 +251,7 @@ async function processQueue(client, interaction, uniqueId) {
         const collector = message.createMessageComponentCollector({
           componentType: ComponentType.Button,
           filter,
-          time: 30000,
+          time: 600000,
         });
 
         collector.on("collect", async (i) => {

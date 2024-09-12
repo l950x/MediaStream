@@ -38,7 +38,10 @@ module.exports = {
     .setName("stream-tiktok")
     .setDescription(STREAM_MEDIA_DESCRIPTION)
     .addStringOption((option) =>
-      option.setName("tiktok_url").setDescription("TikTok URL")
+      option
+        .setRequired(true)
+        .setName("tiktok_url")
+        .setDescription("TikTok URL")
     )
     .addIntegerOption((option) =>
       option
@@ -146,10 +149,30 @@ async function processQueue(client, interaction, uniqueId) {
           }
         });
       });
+      const mp3FilePath = path.join(
+        __dirname,
+        "../public/assets/uploads",
+        `audio_${uniqueId}.mp3`
+      );
+
+      await new Promise((resolve, reject) => {
+        ffmpeg(filePath)
+          .output(mp3FilePath)
+          .audioCodec("libmp3lame") // Utilise le codec audio MP3
+          .on("end", () => {
+            console.log("Audio saved as MP3:", mp3FilePath);
+            resolve();
+          })
+          .on("error", (err) => {
+            console.error("Error extracting audio:", err);
+            reject(err);
+          })
+          .run();
+      });
 
       const firstEmbed = new EmbedBuilder()
         .setColor("#ff8000")
-        .setTitle(BOT_NAME)
+        .setTitle("Paname Boss")
         .setDescription(QUEUE_MESSAGE)
         .addFields({ name: "Duration", value: `${duration} seconds` })
         .setImage(`attachment://latest_media_${uniqueId}${fileExtension}`);

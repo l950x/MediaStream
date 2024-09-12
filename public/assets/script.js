@@ -154,6 +154,7 @@ function displayVideo(content, durationInMs, id, videoLink) {
   videoElement.volume = 0.25;
 
   videoElement.autoplay = true;
+  // videoElement.muted = true;
 
   document.body.appendChild(videoElement);
   setTimeout(() => {

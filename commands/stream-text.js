@@ -136,7 +136,7 @@ async function processQueue(client, interaction, uniqueId) {
         const collector = message.createMessageComponentCollector({
           componentType: ComponentType.Button,
           filter,
-          time: 60000,
+          time: 600000,
         });
 
         collector.on("collect", async (i) => {
